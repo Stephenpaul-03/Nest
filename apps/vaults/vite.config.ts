@@ -15,7 +15,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     federation({
-      name: "accounts",
+      name:"vault",
       filename: "remoteEntry.js",
       exposes: {
         "./App": "./src/App.tsx",
@@ -29,7 +29,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5174,
+    port: 5176,
     cors: true,
     headers: {
       "Access-Control-Allow-Origin": "*",

@@ -88,3 +88,6 @@ apps/**/.storybook-cache/
 *.patch
 *.bak
 *.tmp
+
+# MF
+.__mf__temp

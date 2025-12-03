@@ -1,45 +1,57 @@
-/// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { federation } from "@module-federation/vite";
+import path from "path";
 
-
-// https://vite.dev/config/
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-import { playwright } from '@vitest/browser-playwright';
-const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-
-// More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [react(),tailwindcss()],
-  test: {
-    projects: [{
-      extends: true,
-      plugins: [
-      // The plugin will run tests for the stories defined in your Storybook config
-      // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      storybookTest({
-        configDir: path.join(dirname, '.storybook')
-      })],
-      test: {
-        name: 'storybook',
-        browser: {
-          enabled: true,
-          headless: true,
-          provider: playwright({}),
-          instances: [{
-            browser: 'chromium'
-          }]
+  plugins: [
+    react(),
+    tailwindcss(),
+    federation({
+      name: "core",
+      remotes: {
+        accounts: {
+          type: "module",
+          name: "accounts",
+          entry: "http://localhost:5174/remoteEntry.js",
+          entryGlobalName: "accounts",
+          shareScope: "default",
         },
-        setupFiles: ['.storybook/vitest.setup.ts']
-      }
-    }]
-  },
+        events: {
+          type: "module",
+          name: "events",
+          entry: "http://localhost:5175/remoteEntry.js",
+          entryGlobalName: "events",
+          shareScope: "default",
+        },
+        vault: {
+          type: "module",
+          name: "vault",
+          entry: "http://localhost:5176/remoteEntry.js",
+          entryGlobalName: "vault",
+          shareScope: "default",
+        },
+      },
+      shared: {
+        react: { singleton: true, requiredVersion: "^18.0.0" },
+        "react-dom": { singleton: true, requiredVersion: "^18.0.0" },
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  server: {
+    port: 5173,
+    cors: true,
+  },
+  build: {
+    target: "esnext",
+    minify: false,
+    cssCodeSplit: false,
+    modulePreload: false,
   },
 });

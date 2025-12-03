@@ -6,8 +6,11 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w apps/core",
-    "build": "npm run build -w apps/core",
-    "storybook": "npm run storybook -w apps/core"
+    "dev:accounts": "cd apps/accounts && npm run dev",
+    "dev:events": "cd apps/events && npm run dev",
+    "dev:vaults": "cd apps/vaults && npm run dev",
+    "dev:core": "cd apps/core && npm run dev",
+
+    "dev": "npm-run-all --parallel dev:accounts dev:events dev:vaults dev:core"
   }
 }

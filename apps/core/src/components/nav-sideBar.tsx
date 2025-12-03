@@ -19,7 +19,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-
 const data = {
   user: {
     name: "Stephen Paul",
@@ -45,7 +44,7 @@ const data = {
   ],
 }
 
-const navByTool = {
+export const navByTool = {
   Accounts: [
     {
       title: "Finance Dashboard",
@@ -58,6 +57,7 @@ const navByTool = {
       ],
     },
   ],
+
   Events: [
     {
       title: "Events",
@@ -70,6 +70,7 @@ const navByTool = {
       ],
     },
   ],
+
   Vault: [
     {
       title: "Documents",
@@ -84,13 +85,19 @@ const navByTool = {
   ],
 } as const
 
-type ToolName = keyof typeof navByTool
+export type ToolName = keyof typeof navByTool
 
-export function AppSidebar(
-  props: React.ComponentProps<typeof Sidebar>
-) {
-  const [activeTool, setActiveTool] = React.useState<ToolName>("Accounts")
+interface AppSidebarProps
+  extends React.ComponentProps<typeof Sidebar> {
+  activeTool: ToolName
+  onToolChange: (tool: ToolName) => void
+}
 
+export function AppSidebar({
+  activeTool,
+  onToolChange,
+  ...props
+}: AppSidebarProps) {
   const navItems = navByTool[activeTool]
 
   return (
@@ -98,7 +105,9 @@ export function AppSidebar(
       <SidebarHeader>
         <ToolSwitcher
           teams={data.tools}
-          onSelect={(team) => setActiveTool(team.name as ToolName)}
+          onSelect={(team) =>
+            onToolChange(team.name as ToolName)
+          }
         />
       </SidebarHeader>
 

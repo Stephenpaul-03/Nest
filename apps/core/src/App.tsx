@@ -1,10 +1,11 @@
 import './App.css'
-import LoginPage from './screens/login/loginPage' // adjust path based on your project
-
+// import LoginPage from './screens/login/loginPage'
+import HomePage from './screens/home/homePage'
 function App() { 
   return (
-    <div className="w-screen h-screen bg-teal-50">
-      <LoginPage />
+    <div className="w-screen h-screen">
+      {/* <LoginPage /> */}
+      <HomePage/>
     </div>
   )
 }

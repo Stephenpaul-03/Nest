@@ -12,14 +12,10 @@ import {
 import type { ToolName } from "@/components/nav-sideBar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { loadRemoteApp } from "@/lib/loadRemoteApp";
+import LoginPage from "../login/loginPage";
 
 export default function HomePage() {
   const [activeTool, setActiveTool] = React.useState<ToolName>("Accounts");
-  const RemoteApp = React.useMemo(
-    () => loadRemoteApp(activeTool),
-    [activeTool]
-  );
 
   return (
     <SidebarProvider>
@@ -52,9 +48,7 @@ export default function HomePage() {
         </header>
 
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <React.Suspense fallback={<div>Loading {activeTool}...</div>}>
-            {RemoteApp && <RemoteApp />}
-          </React.Suspense>
+          <LoginPage/>
         </div>
       </SidebarInset>
     </SidebarProvider>

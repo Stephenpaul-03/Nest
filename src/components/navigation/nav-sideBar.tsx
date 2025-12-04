@@ -1,23 +1,18 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import {
-  Calendar,
-  CreditCardIcon,
-  Lock,
-  SquareTerminal,
-} from "lucide-react"
+import * as React from "react";
+import { Calendar, CreditCardIcon, Lock, SquareTerminal } from "lucide-react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
-import { ToolSwitcher } from "@/components/nav-toolSwitcher"
+import { NavMain } from "@/components/navigation/nav-main";
+import { NavUser } from "@/components/navigation/nav-user";
+import { ToolSwitcher } from "@/components/navigation/nav-toolSwitcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 const data = {
   user: {
@@ -42,7 +37,7 @@ const data = {
       plan: "Documents",
     },
   ],
-}
+};
 
 export const navByTool = {
   Accounts: [
@@ -83,14 +78,13 @@ export const navByTool = {
       ],
     },
   ],
-} as const
+} as const;
 
-export type ToolName = keyof typeof navByTool
+export type ToolName = keyof typeof navByTool;
 
-interface AppSidebarProps
-  extends React.ComponentProps<typeof Sidebar> {
-  activeTool: ToolName
-  onToolChange: (tool: ToolName) => void
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  activeTool: ToolName;
+  onToolChange: (tool: ToolName) => void;
 }
 
 export function AppSidebar({
@@ -98,16 +92,15 @@ export function AppSidebar({
   onToolChange,
   ...props
 }: AppSidebarProps) {
-  const navItems = navByTool[activeTool]
+  const navItems = navByTool[activeTool];
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <ToolSwitcher
-          teams={data.tools}
-          onSelect={(team) =>
-            onToolChange(team.name as ToolName)
-          }
+          tools={data.tools}
+          activeTool={activeTool}
+          onSelect={(tool) => onToolChange(tool.name as ToolName)}
         />
       </SidebarHeader>
 
@@ -121,5 +114,5 @@ export function AppSidebar({
 
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

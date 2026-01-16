@@ -33,11 +33,18 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
   const hasChildren = !!item.children;
   const showLabel = !state.isSidebarCollapsed || state.isMobile;
   const isSubmenuOpen = state.collapsedSubmenuIndex === index;
-
-  const activeChild =
-    state.isSidebarCollapsed && !state.isMobile && item.children
-      ? item.children.find(c => isActive(c.path))
-      : null;
+  const accentColor = item.accentColor || '#3b82f6';
+  const defaultColor = '#e5e7eb';
+  const mutedColor = '#a0a0a0';
+  const activeChild = hasChildren && item.children
+    ? item.children.find(c => isActive(c.path))
+    : null;
+  const isParentActive = hasChildren && (
+    isActive(item.path!) || 
+    (item.children && item.children.some(c => isActive(c.path)))
+  );
+  
+  const hasActiveChild = hasChildren && item.children && item.children.some(c => isActive(c.path));
 
   if (hasChildren) {
     return (
@@ -54,7 +61,9 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
           borderRadius="$md"
           alignItems="center"
           justifyContent={state.isSidebarCollapsed ? 'center' : 'flex-start'}
-          $hover={{ bg: '$backgroundDark800' }}
+          // bg={!state.isSidebarCollapsed && hasActiveChild ? accentColor : 'transparent'}
+          // $hover={{ bg: !state.isSidebarCollapsed && hasActiveChild ? accentColor : '$backgroundDark800' }}
+          $hover={{bg:"$backgroundDark800"}}
         >
           <HStack
             alignItems="center"
@@ -66,7 +75,7 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
                 <MaterialIcons
                   name={item.icon}
                   size={22}
-                  color={isSubmenuOpen ? "#3b82f6" : "#e5e7eb"}
+                  color={isParentActive || isSubmenuOpen ? accentColor : defaultColor}
                 />
               </IconBox>
 
@@ -79,13 +88,15 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
                   height={18}
                   borderRadius={9}
                   bg="$backgroundDark900"
+                  borderWidth={1}
+                  borderColor={activeChild.accentColor || accentColor}
                   alignItems="center"
                   justifyContent="center"
                 >
                   <MaterialIcons
                     name={activeChild.icon}
                     size={11}
-                    color="#3b82f6"
+                    color={activeChild.accentColor || accentColor}
                   />
                 </Box>
               )}
@@ -93,7 +104,7 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
 
             {showLabel && (
               <>
-                <Text ml="$3" flex={1} color="$textLight200" fontWeight="$semibold">
+                <Text ml="$3" flex={1} color={hasActiveChild || isParentActive || isSubmenuOpen ? accentColor : "$textLight200"} fontWeight="$semibold">
                   {item.title}
                 </Text>
 
@@ -101,7 +112,7 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
                   <MaterialIcons
                     name={isExpanded ? "keyboard-arrow-down" : "keyboard-arrow-right"}
                     size={20}
-                    color="#a0a0a0"
+                    color={mutedColor}
                   />
                 )}
               </>
@@ -111,36 +122,44 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
 
         {isExpanded && !state.isSidebarCollapsed && (
           <VStack ml="$6" mt="$2">
-            {item.children!.map(child => (
-              <Pressable
-                key={child.path}
-                onPress={() => navigate(child.path)}
-                py="$2"
-                px="$3"
-                borderRadius="$md"
-                bg={isActive(child.path) ? '$primary500' : 'transparent'}
-                $hover={{ bg: '$backgroundDark800' }}
-              >
-                <HStack alignItems="center">
-                  <IconBox>
-                    <MaterialIcons
-                      name={child.icon}
-                      size={16}
-                      color={isActive(child.path) ? "#fff" : "#a0a0a0"}
-                    />
-                  </IconBox>
+            {item.children!.map(child => {
+              const childAccentColor = child.accentColor || accentColor;
+              const isChildActive = isActive(child.path);
+              
+              return (
+                <Pressable
+                  key={child.path}
+                  onPress={() => navigate(child.path)}
+                  py="$2"
+                  px="$3"
+                  borderRadius="$md"
+                  bg={isChildActive ? childAccentColor : 'transparent'}
+                  $hover={{ bg: isChildActive ? childAccentColor : '$backgroundDark800' }}
+                >
+                  <HStack alignItems="center">
+                    <IconBox>
+                      <MaterialIcons
+                        name={child.icon}
+                        size={16}
+                        color={isChildActive ? "#fff" : mutedColor}
+                      />
+                    </IconBox>
 
-                  <Text ml="$3" color={isActive(child.path) ? "$textLight50" : "$textLight400"}>
-                    {child.title}
-                  </Text>
-                </HStack>
-              </Pressable>
-            ))}
+                    <Text ml="$3" color={isChildActive ? "$textLight50" : "$textLight400"}>
+                      {child.title}
+                    </Text>
+                  </HStack>
+                </Pressable>
+              );
+            })}
           </VStack>
         )}
       </Box>
     );
   }
+
+  const itemAccentColor = item.accentColor || accentColor;
+  const isItemActive = isActive(item.path!);
 
   return (
     <Pressable
@@ -148,22 +167,22 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
       py="$2"
       px={state.isSidebarCollapsed ? "$1" : "$3"}
       borderRadius="$md"
-      alignItems="center"
+      alignItems={state.isSidebarCollapsed ? "center" : "flex-start"}
       justifyContent={state.isSidebarCollapsed ? 'center' : 'flex-start'}
-      bg={isActive(item.path!) ? '$primary500' : 'transparent'}
-      $hover={{ bg: '$backgroundDark800' }}
+      bg={!state.isSidebarCollapsed && isItemActive ? itemAccentColor : 'transparent'}
+      $hover={{ bg: !state.isSidebarCollapsed && isItemActive ? itemAccentColor : '$backgroundDark800' }}
     >
       <HStack alignItems="center">
         <IconBox>
           <MaterialIcons
             name={item.icon}
             size={22}
-            color={isActive(item.path!) ? "#fff" : "#e5e7eb"}
+            color={isItemActive ? itemAccentColor : defaultColor}
           />
         </IconBox>
 
         {showLabel && (
-          <Text ml="$3" color="$textLight200" fontWeight="$semibold">
+          <Text ml="$3" color={isItemActive ? itemAccentColor : "$textLight200"} fontWeight="$semibold">
             {item.title}
           </Text>
         )}
@@ -171,3 +190,4 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
     </Pressable>
   );
 }
+

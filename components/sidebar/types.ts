@@ -4,9 +4,11 @@ export type NavItem = {
   title: string;
   path?: string;
   icon: keyof typeof MaterialIcons.glyphMap;
+  accentColor?: string;
   children?: {
     title: string;
     path: string;
     icon: keyof typeof MaterialIcons.glyphMap;
+    accentColor?: string;
   }[];
 };

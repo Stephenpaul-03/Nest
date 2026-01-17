@@ -1,3 +1,4 @@
+import { useThemeContext } from '@/src/context/ThemeContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Box, Pressable, VStack } from '@gluestack-ui/themed';
 import { useRouter } from 'expo-router';
@@ -12,6 +13,7 @@ import { navigationItems } from './navigation';
 export function Sidebar() {
   const router = useRouter();
   const state = useSidebarState();
+  const { colorMode } = useThemeContext();
 
   const navigate = (path: string) => router.push(path as any);
 
@@ -22,32 +24,45 @@ export function Sidebar() {
     ? '75%'
     : state.isSidebarCollapsed ? 72 : 250;
 
+  const backgroundColor = colorMode === 'dark' ? '#0a0a0a' : '#FFFFFF';
+  const borderColor = colorMode === 'dark' ? '$borderDark800' : '$borderLight200';
+  const iconColor = colorMode === 'dark' ? '#D1D5DB' : '#374151';
+
   return (
     <>
       {state.isMobile && (
         <Box position="absolute" top={12} left={16} zIndex={10}>
           <Pressable onPress={() => state.setIsMobileDrawerOpen(!state.isMobileDrawerOpen)}>
-            <MaterialIcons name="menu" size={24} color="#fff" />
+            <MaterialIcons name="menu" size={24} color={iconColor} />
           </Pressable>
         </Box>
       )}
 
       <Box
-        bg="$backgroundDark900"
+        bg={backgroundColor}
         width={sidebarWidth}
         height="100%"
         borderRightWidth={state.isMobile ? 0 : 1}
-        borderRightColor="$borderDark800"
+        borderRightColor={borderColor}
       >
         {state.isMobile ? (
           <MobileHeader open={state.isMobileDrawerOpen} toggle={() => state.setIsMobileDrawerOpen(!state.isMobileDrawerOpen)} />
         ) : (
-          <WebHeader collapsed={state.isSidebarCollapsed} toggle={() => state.setIsSidebarCollapsed(!state.isSidebarCollapsed)} />
+          <WebHeader 
+            collapsed={state.isSidebarCollapsed} 
+            toggle={() => {
+              state.setIsSidebarCollapsed(!state.isSidebarCollapsed);
+              if (state.isSidebarCollapsed) {
+                state.closeCollapsedMenu();
+              }
+            }} 
+          />
         )}
 
         <VStack
           flex={1}
-          px={state.isSidebarCollapsed ? "$1" : "$4"}
+          px="$2"
+          pb="$2"
           justifyContent="space-between"
         >
           <VStack>
@@ -65,7 +80,7 @@ export function Sidebar() {
               ))}
           </VStack>
 
-          <VStack pb="$4">
+          <VStack>
             {navigationItems
               .filter(i => i.title === 'Settings')
               .map((item, i) => (
@@ -92,3 +107,4 @@ export function Sidebar() {
     </>
   );
 }
+

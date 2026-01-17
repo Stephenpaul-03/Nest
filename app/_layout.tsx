@@ -8,7 +8,7 @@ import { UIProvider } from '@/src/utils/ui-provider';
 export default function RootLayout() {
   return (
     <ReduxProvider store={store}>
-      <UIProvider mode="dark">
+      <UIProvider>
         <Slot />
       </UIProvider>
     </ReduxProvider>

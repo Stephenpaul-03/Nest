@@ -12,6 +12,7 @@ export const navigationItems: NavItem[] = [
     title: 'Finances',
     icon: 'account-balance-wallet',
     accentColor: '#3fb6a8', // muted teal
+    toolKey: 'finance',
     children: [
       {
         title: 'Transactions',
@@ -38,6 +39,7 @@ export const navigationItems: NavItem[] = [
     title: 'Events',
     icon: 'event',
     accentColor: '#e28a3b', // muted orange
+    toolKey: 'events',
     children: [
       {
         title: 'Calendar',
@@ -58,6 +60,7 @@ export const navigationItems: NavItem[] = [
     title: 'Medicals',
     icon: 'local-hospital',
     accentColor: '#e06666', // muted red
+    toolKey: 'medicals',
     children: [
       {
         title: 'Inventory',
@@ -81,3 +84,4 @@ export const navigationItems: NavItem[] = [
     accentColor: '#6bbf7a', // muted green
   },
 ];
+

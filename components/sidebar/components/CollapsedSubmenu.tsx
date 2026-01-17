@@ -1,24 +1,16 @@
-import { useThemeContext } from '@/src/context/ThemeContext';
+import { useThemedColors } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Box, HStack, Pressable, Text, VStack } from '@gluestack-ui/themed';
 import { navigationItems } from '../navigation';
 
 export function CollapsedSubmenu({ index, isActive, navigate, close }: any) {
-  const { colorMode } = useThemeContext();
+  const { background, border, text, icon } = useThemedColors();
   
   if (index === null) return null;
   const item = navigationItems[index];
   if (!item?.children) return null;
 
   const accentColor = item.accentColor || '#3b82f6';
-  const defaultColor = '#e5e7eb';
-  const mutedColor = colorMode === 'dark' ? '#a0a0a0' : '#9ca3af';
-  const backgroundColor = colorMode === 'dark' ? '#0a0a0a' : '#FFFFFF';
-  const borderColor = colorMode === 'dark' ? '$borderDark800' : '$borderLight200';
-  const hoverBg = colorMode === 'dark' ? '$backgroundDark800' : '$backgroundLight200';
-  const headerBg = colorMode === 'dark' ? '$backgroundDark900' : '$backgroundLight0';
-  const textColor = colorMode === 'dark' ? '$textLight200' : '$textLight700';
-  const headerTextColor = colorMode === 'dark' ? '$textLight50' : '$textLight900';
 
   return (
     <Box 
@@ -27,13 +19,13 @@ export function CollapsedSubmenu({ index, isActive, navigate, close }: any) {
       top={0} 
       bottom={0} 
       width={200} 
-      bg={backgroundColor}  
+      bg={background.primary}  
       zIndex={10}
       borderRightWidth={1}
-      borderRightColor={borderColor}
+      borderRightColor={border.primary}
     >
       <VStack>
-        <HStack p="$4" mb='$3' justifyContent='center' borderBottomColor={borderColor} borderBottomWidth={1} bg={backgroundColor}>
+        <HStack p="$4" mb='$3' justifyContent='center' borderBottomColor={border.primary} borderBottomWidth={1} bg={background.primary}>
           <MaterialIcons name={item.icon} size={18} color={accentColor} />
           <Text ml="$2" color={accentColor} fontWeight="$bold">
             {item.title}
@@ -55,17 +47,17 @@ export function CollapsedSubmenu({ index, isActive, navigate, close }: any) {
               mx="$4"
               borderRadius="$md"
               bg={isChildActive ? childAccentColor : 'transparent'}
-              $hover={{ bg: isChildActive ? childAccentColor : hoverBg }}
+              $hover={{ bg: isChildActive ? childAccentColor : background.hover }}
             >
               <HStack alignItems="center">
                 <MaterialIcons 
                   name={child.icon} 
                   size={16} 
-                  color={isChildActive ? "#fff" : mutedColor} 
+                  color={isChildActive ? "#fff" : icon.muted} 
                 />
                 <Text 
                   ml="$3" 
-                  color={isChildActive ? "$textLight50" : textColor}
+                  color={isChildActive ? "$textLight50" : text.primary}
                   fontWeight={isChildActive ? "$semibold" : "$normal"}
                 >
                   {child.title}

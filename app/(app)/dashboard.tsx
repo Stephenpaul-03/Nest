@@ -1,17 +1,14 @@
-import { useThemeContext } from '@/src/context/ThemeContext';
+import { useThemedColors } from '@/constants/colors';
 import { Center, Text } from '@gluestack-ui/themed';
 
 export default function Dashboard() {
-  const { colorMode } = useThemeContext();
-  const backgroundColor = colorMode === 'dark' ? '#0a0a0a' : '#FBFBFB';
-  const textColor = colorMode === 'dark' ? '#ECEDEE' : '#11181C';
+  const { background, text } = useThemedColors();
 
   return (
-    <Center flex={1} bg={backgroundColor}>
-      <Text size="2xl" color={textColor} fontWeight="$bold">
+    <Center flex={1} bg={background.primary}>
+      <Text size="2xl" color={text.primary} fontWeight="$bold">
         Dashboard
       </Text>
     </Center>
   );
 }
-

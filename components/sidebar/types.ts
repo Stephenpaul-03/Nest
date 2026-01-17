@@ -5,6 +5,7 @@ export type NavItem = {
   path?: string;
   icon: keyof typeof MaterialIcons.glyphMap;
   accentColor?: string;
+  toolKey?: string;
   children?: {
     title: string;
     path: string;
@@ -12,3 +13,4 @@ export type NavItem = {
     accentColor?: string;
   }[];
 };
+

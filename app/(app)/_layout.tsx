@@ -1,24 +1,20 @@
 import { Sidebar } from '@/components/sidebar/Sidebar';
-import { useThemeContext } from '@/src/context/ThemeContext';
+import { useThemedColors } from '@/constants/colors';
 import { Box, HStack } from '@gluestack-ui/themed';
 import { Slot } from 'expo-router';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 function AppLayoutContent() {
-  const { colorMode } = useThemeContext();
-  const backgroundColor = colorMode === 'dark' ? '#0a0a0a' : '#FBFBFB';
+  const { background } = useThemedColors();
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor }}
+      style={{ flex: 1, backgroundColor: background.primary }}
       edges={['top', 'bottom', 'left', 'right']}
     >
-      <HStack flex={1} bg={backgroundColor}>
-        {/* Sidebar - visible on all platforms */}
+      <HStack flex={1} bg={background.primary}>
         <Sidebar />
-
-        {/* Main content area */}
-        <Box flex={1} bg={backgroundColor}>
+        <Box flex={1} bg={background.primary}>
           <Slot />
         </Box>
       </HStack>
@@ -33,4 +29,3 @@ export default function AppLayout() {
     </SafeAreaProvider>
   );
 }
-

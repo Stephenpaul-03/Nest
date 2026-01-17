@@ -1,14 +1,9 @@
-import { useThemeContext } from '@/src/context/ThemeContext';
+import { useThemedColors } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Box, HStack, Pressable, Text } from '@gluestack-ui/themed';
 
 export function MobileHeader({ open, toggle }: { open: boolean; toggle: () => void }) {
-  const { colorMode } = useThemeContext();
-  
-  const backgroundColor = colorMode === 'dark' ? '$backgroundDark900' : '$backgroundLight0';
-  const borderColor = colorMode === 'dark' ? '$borderDark800' : '$borderLight200';
-  const iconColor = colorMode === 'dark' ? '#fff' : '#11181C';
-  const textColor = colorMode === 'dark' ? '$textLight50' : '$textLight900';
+  const { background, border, text, icon } = useThemedColors();
 
   return (
     <HStack
@@ -18,14 +13,14 @@ export function MobileHeader({ open, toggle }: { open: boolean; toggle: () => vo
       py="$3"
       mb="$4"
       borderBottomWidth={1}
-      borderBottomColor={borderColor}
-      bg={backgroundColor}
+      borderBottomColor={border.primary}
+      bg={background.primary}
     >
       <Pressable onPress={toggle}>
-        <MaterialIcons name={open ? "close" : "menu"} size={24} color={iconColor} />
+        <MaterialIcons name={open ? "close" : "menu"} size={24} color={icon.primary} />
       </Pressable>
 
-      <Text color={textColor} fontWeight="$bold" fontSize="$lg">
+      <Text color={text.primary} fontWeight="$bold" fontSize="$lg">
         Menu
       </Text>
 

@@ -1,4 +1,4 @@
-import { useThemeContext } from '@/src/context/ThemeContext';
+import { useThemedColors } from '@/constants/colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Box, HStack, Pressable, Text, VStack } from '@gluestack-ui/themed';
 import { NavItem as NavItemType } from '../types';
@@ -30,17 +30,14 @@ const IconBox = ({
 
 
 export function NavItem({ item, index, state, isActive, navigate }: Props) {
-  const { colorMode } = useThemeContext();
+  const { background, border, text, icon } = useThemedColors();
 
   const isExpanded = state.expandedSections[index] || false;
   const hasChildren = !!item.children;
   const showLabel = !state.isSidebarCollapsed || state.isMobile;
   const isSubmenuOpen = state.collapsedSubmenuIndex === index;
   const accentColor = item.accentColor || '#3b82f6';
-  const defaultColor = colorMode === 'dark' ? '#e5e7eb' : '#525252';
-  const mutedColor = colorMode === 'dark' ? '#a0a0a0' : '#9ca3af';
-  const hoverBg = colorMode === 'dark' ? '$backgroundDark800' : '$backgroundLight200';
-  const borderColor = colorMode === 'dark' ? '$borderDark800' : '$borderLight200';
+  
   const activeChild = hasChildren && item.children
     ? item.children.find(c => isActive(c.path))
     : null;
@@ -50,7 +47,6 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
   );
 
   const hasActiveChild = hasChildren && item.children && item.children.some(c => isActive(c.path));
-  const textColor = colorMode === 'dark' ? '$textLight200' : '$textLight700';
 
   if (hasChildren) {
     return (
@@ -67,7 +63,7 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
           borderRadius="$md"
           alignItems="center"
           justifyContent={state.isSidebarCollapsed ? 'center' : 'flex-start'}
-          $hover={{ bg: hoverBg }}
+          $hover={{ bg: background.hover }}
         >
           <HStack
             alignItems="center"
@@ -79,7 +75,7 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
                 <MaterialIcons
                   name={item.icon}
                   size={22}
-                  color={isParentActive || isSubmenuOpen ? accentColor : defaultColor}
+                  color={isParentActive || isSubmenuOpen ? accentColor : icon.primary}
                 />
               </IconBox>
 
@@ -91,7 +87,7 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
                   width={20}
                   height={20}
                   borderRadius={10}
-                  bg="$backgroundDark900"
+                  bg={background.tertiary}
                   borderWidth={1}
                   borderColor={activeChild.accentColor || accentColor}
                   alignItems="center"
@@ -108,7 +104,7 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
 
             {showLabel && (
               <>
-                <Text ml="$3" flex={1} color={hasActiveChild || isParentActive || isSubmenuOpen ? accentColor : textColor} fontWeight="$semibold">
+                <Text ml="$3" flex={1} color={hasActiveChild || isParentActive || isSubmenuOpen ? accentColor : text.primary} fontWeight="$semibold">
                   {item.title}
                 </Text>
 
@@ -116,7 +112,7 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
                   <MaterialIcons
                     name={isExpanded ? "keyboard-arrow-down" : "keyboard-arrow-right"}
                     size={20}
-                    color={mutedColor}
+                    color={icon.muted}
                   />
                 )}
               </>
@@ -125,7 +121,7 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
         </Pressable>
 
         {isExpanded && !state.isSidebarCollapsed && (
-          <VStack ml="$8" borderLeftWidth='$1' borderColor={borderColor}>
+          <VStack ml="$8" borderLeftWidth='$1' borderColor={border.primary}>
             {item.children!.map(child => {
               const childAccentColor = child.accentColor || accentColor;
               const isChildActive = isActive(child.path);
@@ -137,18 +133,18 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
                   p="$1"
                   ml="$2"
                   borderRadius="$md"
-                  $hover={{ bg: hoverBg }}
+                  $hover={{ bg: background.hover }}
                 >
                   <HStack alignItems="center">
                     <IconBox>
                       <MaterialIcons
                         name={child.icon}
                         size={16}
-                        color={isChildActive ? childAccentColor : mutedColor}
+                        color={isChildActive ? childAccentColor : icon.muted}
                       />
                     </IconBox>
 
-                    <Text ml="$3" color={isChildActive ? childAccentColor : mutedColor}>
+                    <Text ml="$3" color={isChildActive ? childAccentColor : icon.muted}>
                       {child.title}
                     </Text>
                   </HStack>
@@ -173,19 +169,19 @@ export function NavItem({ item, index, state, isActive, navigate }: Props) {
       borderRadius="$md"
       alignItems={state.isSidebarCollapsed ? "center" : "flex-start"}
       justifyContent={state.isSidebarCollapsed ? 'center' : 'flex-start'}
-      $hover={{ bg: hoverBg }}
+      $hover={{ bg: background.hover }}
     >
       <HStack alignItems="center">
         <IconBox>
           <MaterialIcons
             name={item.icon}
             size={22}
-            color={isItemActive ? itemAccentColor : defaultColor}
+            color={isItemActive ? itemAccentColor : icon.primary}
           />
         </IconBox>
 
         {showLabel && (
-          <Text ml="$3" color={isItemActive ? itemAccentColor : textColor} fontWeight="$semibold">
+          <Text ml="$3" color={isItemActive ? itemAccentColor : text.primary} fontWeight="$semibold">
             {item.title}
           </Text>
         )}

@@ -11,17 +11,28 @@ import {
   REHYDRATE,
 } from 'redux-persist';
 import authReducer, { authStorageKey } from './authSlice';
+import inventoryReducer, { inventoryStorageKey } from './inventorySlice';
 
-const persistConfig = {
+const authPersistConfig = {
   key: authStorageKey,
   storage: AsyncStorage,
 };
 
-const persistedAuthReducer = persistReducer(persistConfig, authReducer);
+const inventoryPersistConfig = {
+  key: inventoryStorageKey,
+  storage: AsyncStorage,
+};
+
+const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
+const persistedInventoryReducer = persistReducer(
+  inventoryPersistConfig,
+  inventoryReducer
+);
 
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
+    inventory: persistedInventoryReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

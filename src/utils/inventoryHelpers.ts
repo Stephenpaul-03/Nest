@@ -1,0 +1,132 @@
+/**
+ * Inventory Helper Utilities
+ * Stock status and expiry calculations
+ */
+
+import { DEFAULT_EXPIRY_WARNING_DAYS, InventoryAlerts, InventoryFilters, InventoryVisibilityOptions, MedicalItem } from '@/src/types/inventory';
+
+export function isExpired(item: MedicalItem): boolean {
+  if (!item.expiryDate) return false;
+  const expiryDate = new Date(item.expiryDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return expiryDate < today;
+}
+
+export function isExpiringSoon(item: MedicalItem, warningDays: number = DEFAULT_EXPIRY_WARNING_DAYS): boolean {
+  if (!item.expiryDate || isExpired(item)) return false;
+  const expiryDate = new Date(item.expiryDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const warningDate = new Date(today);
+  warningDate.setDate(today.getDate() + warningDays);
+  return expiryDate <= warningDate;
+}
+
+export function isLowStock(item: MedicalItem): boolean {
+  return item.quantity > 0 && item.quantity <= item.lowStockThreshold;
+}
+
+export function isOutOfStock(item: MedicalItem): boolean {
+  return item.quantity <= 0;
+}
+
+export function getCalculatedStatus(item: MedicalItem): 'active' | 'out_of_stock' {
+  return isOutOfStock(item) ? 'out_of_stock' : 'active';
+}
+
+export function calculateAlerts(items: MedicalItem[], expiryWarningDays: number = DEFAULT_EXPIRY_WARNING_DAYS): InventoryAlerts {
+  return {
+    lowStockCount: items.filter((item) => isLowStock(item)).length,
+    outOfStockCount: items.filter((item) => isOutOfStock(item)).length,
+    expiringSoonCount: items.filter((item) => isExpiringSoon(item, expiryWarningDays)).length,
+    expiredCount: items.filter((item) => isExpired(item)).length,
+  };
+}
+
+export function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+export function formatRelativeDate(dateString: string): string {
+  const date = new Date(dateString);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffTime = date.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) {
+    const absDays = Math.abs(diffDays);
+    if (absDays === 1) return 'Yesterday';
+    if (absDays < 30) return `${absDays} days ago`;
+    if (absDays < 365) return `${Math.floor(absDays / 30)} months ago`;
+    return `${Math.floor(absDays / 365)} years ago`;
+  }
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays < 30) return `In ${diffDays} days`;
+  if (diffDays < 365) return `In ${Math.floor(diffDays / 30)} months`;
+  return `In ${Math.floor(diffDays / 365)} years`;
+}
+
+export function matchesFilters(item: MedicalItem, filters: InventoryFilters): boolean {
+  if (filters.search) {
+    const searchLower = filters.search.toLowerCase();
+    const matchesSearch = item.name.toLowerCase().includes(searchLower) || item.category.toLowerCase().includes(searchLower) || (item.assignedTo && item.assignedTo.toLowerCase().includes(searchLower)) || (item.notes && item.notes.toLowerCase().includes(searchLower));
+    if (!matchesSearch) return false;
+  }
+  if (filters.category && filters.category !== 'all' && item.category !== filters.category) return false;
+  if (filters.status && filters.status !== 'all') {
+    const calculatedStatus = getCalculatedStatus(item);
+    if (calculatedStatus !== filters.status) return false;
+  }
+  if (filters.assignedTo) {
+    if (filters.assignedTo === 'none' && item.assignedTo) return false;
+    if (filters.assignedTo !== 'all' && filters.assignedTo !== 'none' && item.assignedTo !== filters.assignedTo) return false;
+  }
+  return true;
+}
+
+export function matchesVisibilityOptions(item: MedicalItem, options: InventoryVisibilityOptions): boolean {
+  if (!options.showExpired && isExpired(item)) return false;
+  if (!options.showOutOfStock && isOutOfStock(item)) return false;
+  return true;
+}
+
+export function getUniqueCategories(items: MedicalItem[]): string[] {
+  const categories = new Set(items.map((item) => item.category));
+  return Array.from(categories).sort();
+}
+
+export function getUniqueAssignedTo(items: MedicalItem[]): string[] {
+  const assignedTo = new Set(items.filter((item) => item.assignedTo).map((item) => item.assignedTo!));
+  return Array.from(assignedTo).sort();
+}
+
+export function sortByExpiry(items: MedicalItem[]): MedicalItem[] {
+  return [...items].sort((a, b) => {
+    if (!a.expiryDate && !b.expiryDate) return 0;
+    if (!a.expiryDate) return 1;
+    if (!b.expiryDate) return -1;
+    return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
+  });
+}
+
+export function sortByQuantity(items: MedicalItem[]): MedicalItem[] {
+  return [...items].sort((a, b) => a.quantity - b.quantity);
+}
+
+export function getStockLevel(item: MedicalItem): 'critical' | 'low' | 'normal' {
+  if (isOutOfStock(item)) return 'critical';
+  if (isLowStock(item)) return 'low';
+  return 'normal';
+}
+
+export function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+export function createItem(data: Omit<MedicalItem, 'id' | 'createdAt' | 'updatedAt' | 'status'>): MedicalItem {
+  const now = new Date().toISOString();
+  return { ...data, id: generateId(), status: getCalculatedStatus({ ...data, status: 'active' } as MedicalItem), createdAt: now, updatedAt: now };
+}

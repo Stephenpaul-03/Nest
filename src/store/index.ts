@@ -12,6 +12,7 @@ import {
 } from 'redux-persist';
 import authReducer, { authStorageKey } from './authSlice';
 import inventoryReducer, { inventoryStorageKey } from './inventorySlice';
+import scheduleReducer, { scheduleStorageKey } from './scheduleSlice';
 
 const authPersistConfig = {
   key: authStorageKey,
@@ -23,16 +24,26 @@ const inventoryPersistConfig = {
   storage: AsyncStorage,
 };
 
+const schedulePersistConfig = {
+  key: scheduleStorageKey,
+  storage: AsyncStorage,
+};
+
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 const persistedInventoryReducer = persistReducer(
   inventoryPersistConfig,
   inventoryReducer
+);
+const persistedScheduleReducer = persistReducer(
+  schedulePersistConfig,
+  scheduleReducer
 );
 
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     inventory: persistedInventoryReducer,
+    schedule: persistedScheduleReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

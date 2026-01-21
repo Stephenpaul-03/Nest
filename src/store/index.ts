@@ -14,6 +14,7 @@ import authReducer, { authStorageKey } from './authSlice';
 import eventsReducer, { eventsStorageKey } from './eventsSlice';
 import inventoryReducer, { inventoryStorageKey } from './inventorySlice';
 import scheduleReducer, { scheduleStorageKey } from './scheduleSlice';
+import transactionReducer, { transactionStorageKey } from './transactionSlice';
 
 const authPersistConfig = {
   key: authStorageKey,
@@ -35,6 +36,11 @@ const schedulePersistConfig = {
   storage: AsyncStorage,
 };
 
+const transactionPersistConfig = {
+  key: transactionStorageKey,
+  storage: AsyncStorage,
+};
+
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 const persistedEventsReducer = persistReducer(eventsPersistConfig, eventsReducer);
 const persistedInventoryReducer = persistReducer(
@@ -46,12 +52,18 @@ const persistedScheduleReducer = persistReducer(
   scheduleReducer
 );
 
+const persistedTransactionReducer = persistReducer(
+  transactionPersistConfig,
+  transactionReducer
+);
+
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     events: persistedEventsReducer,
     inventory: persistedInventoryReducer,
     schedule: persistedScheduleReducer,
+    transactions: persistedTransactionReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

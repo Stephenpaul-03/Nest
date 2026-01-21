@@ -11,11 +11,17 @@ import {
   REHYDRATE,
 } from 'redux-persist';
 import authReducer, { authStorageKey } from './authSlice';
+import eventsReducer, { eventsStorageKey } from './eventsSlice';
 import inventoryReducer, { inventoryStorageKey } from './inventorySlice';
 import scheduleReducer, { scheduleStorageKey } from './scheduleSlice';
 
 const authPersistConfig = {
   key: authStorageKey,
+  storage: AsyncStorage,
+};
+
+const eventsPersistConfig = {
+  key: eventsStorageKey,
   storage: AsyncStorage,
 };
 
@@ -30,6 +36,7 @@ const schedulePersistConfig = {
 };
 
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
+const persistedEventsReducer = persistReducer(eventsPersistConfig, eventsReducer);
 const persistedInventoryReducer = persistReducer(
   inventoryPersistConfig,
   inventoryReducer
@@ -42,6 +49,7 @@ const persistedScheduleReducer = persistReducer(
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
+    events: persistedEventsReducer,
     inventory: persistedInventoryReducer,
     schedule: persistedScheduleReducer,
   },

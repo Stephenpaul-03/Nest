@@ -4,9 +4,10 @@
  */
 
 import { useThemedColors } from '@/constants/colors';
+import { RootState } from '@/src/store';
 import { Transaction } from '@/src/types/transaction';
 import { TransactionGroup } from '@/src/utils/historyHelpers';
-import { formatCurrency, formatDate } from '@/src/utils/transactionHelpers';
+import { formatCurrencyWithSymbol, formatDate } from '@/src/utils/transactionHelpers';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   Box,
@@ -24,6 +25,7 @@ import {
   VStack,
 } from '@gluestack-ui/themed';
 import React from 'react';
+import { useSelector } from 'react-redux';
 
 interface DrillDownModalProps {
   isOpen: boolean;
@@ -34,6 +36,10 @@ interface DrillDownModalProps {
 
 export function DrillDownModal({ isOpen, onClose, group, showDeleted }: DrillDownModalProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   if (!group) return null;
   
@@ -59,7 +65,7 @@ export function DrillDownModal({ isOpen, onClose, group, showDeleted }: DrillDow
                 {group.label}
               </Text>
               <Text size="sm" color={colors.text.muted}>
-                {group.itemCount} transaction{group.itemCount !== 1 ? 's' : ''} • Total: ${formatCurrency(group.total)}
+                {group.itemCount} transaction{group.itemCount !== 1 ? 's' : ''} • Total: {currencySymbol}{formatCurrencyWithSymbol(group.total, currencySymbol, false)}
               </Text>
             </VStack>
           </HStack>
@@ -77,6 +83,7 @@ export function DrillDownModal({ isOpen, onClose, group, showDeleted }: DrillDow
                   transaction={transaction}
                   showDeleted={showDeleted}
                   amountColor={amountColor}
+                  currencySymbol={currencySymbol}
                 />
               ))}
             </VStack>
@@ -105,12 +112,14 @@ interface DrillDownTransactionItemProps {
   transaction: Transaction;
   showDeleted: boolean;
   amountColor: string;
+  currencySymbol?: string;
 }
 
 function DrillDownTransactionItem({
   transaction,
   showDeleted,
   amountColor,
+  currencySymbol = '$',
 }: DrillDownTransactionItemProps) {
   const colors = useThemedColors();
   
@@ -209,7 +218,7 @@ function DrillDownTransactionItem({
           color={amountColor}
           textDecorationLine={isDeleted ? 'line-through' : 'none'}
         >
-          {isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}
+          {isIncome ? '+' : '-'}{formatCurrencyWithSymbol(transaction.amount, currencySymbol)}
         </Text>
       </HStack>
     </Box>

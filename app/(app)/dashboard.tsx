@@ -1,14 +1,420 @@
-import { useThemedColors } from '@/constants/colors';
-import { Center, Text } from '@gluestack-ui/themed';
+/**
+ * Dashboard Component
+ * 
+ * High-level workspace summary showing:
+ * - Finance Summary (if Finance enabled)
+ * - Events Summary (if Events enabled)
+ * - Medical Alerts (if Medicals enabled)
+ * 
+ * Read-only, projection layer only - no data mutation.
+ */
 
-export default function Dashboard() {
-  const { background, text } = useThemedColors();
+import { AlertCard } from '@/components/inventory/AlertCard';
+import { NetBalanceCard, ReportsMetricsCard } from '@/components/reports/ReportsMetricsCard';
+import { useThemedColors } from '@/constants/colors';
+import { RootState } from '@/src/store';
+import { formatDateTime, getUpcomingEvents } from '@/src/utils/eventHelpers';
+import { calculateAlerts } from '@/src/utils/inventoryHelpers';
+import { getCurrentMonthTransactions } from '@/src/utils/transactionHelpers';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  Box,
+  HStack,
+  Pressable,
+  ScrollView,
+  Text,
+  VStack,
+} from '@gluestack-ui/themed';
+import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
+import { useSelector } from 'react-redux';
+
+// ============================================================================
+// Selectors / Derived Data
+// ============================================================================
+
+function useFinanceSummary() {
+  const transactions = useSelector(
+    (state: RootState) => state.transactions.transactions
+  );
+  const currentMonthTransactions = useMemo(
+    () => getCurrentMonthTransactions(transactions),
+    [transactions]
+  );
+
+  const income = useMemo(
+    () =>
+      currentMonthTransactions
+        .filter((t) => t.type === 'income' && !t.deleted)
+        .reduce((sum, t) => sum + t.amount, 0),
+    [currentMonthTransactions]
+  );
+
+  const expense = useMemo(
+    () =>
+      currentMonthTransactions
+        .filter((t) => t.type === 'expense' && !t.deleted)
+        .reduce((sum, t) => sum + t.amount, 0),
+    [currentMonthTransactions]
+  );
+
+  return { income, expense };
+}
+
+function useEventsSummary() {
+  const events = useSelector((state: RootState) => state.events.items);
+
+  const upcomingEvents = useMemo(
+    () => getUpcomingEvents(events, 30),
+    [events]
+  );
+
+  const nextEvent = upcomingEvents[0] || null;
+  const eventsIn7Days = useMemo(
+    () => getUpcomingEvents(events, 7).length,
+    [events]
+  );
+  const eventsIn30Days = upcomingEvents.length;
+
+  return { nextEvent, eventsIn7Days, eventsIn30Days };
+}
+
+function useMedicalAlerts() {
+  const items = useSelector((state: RootState) => state.inventory.items);
+  return useMemo(() => calculateAlerts(items), [items]);
+}
+
+// ============================================================================
+// Section Components
+// ============================================================================
+
+function FinanceSummarySection() {
+  const { income, expense } = useFinanceSummary();
+  const router = useRouter();
 
   return (
-    <Center flex={1} bg={background.primary}>
-      <Text size="2xl" color={text.primary} fontWeight="$bold">
-        Dashboard
-      </Text>
-    </Center>
+    <VStack gap="$3">
+      {/* Section Header */}
+      <HStack justifyContent="space-between" alignItems="center">
+        <HStack gap="$2" alignItems="center">
+          <MaterialCommunityIcons
+            name="trending-up"
+            size={20}
+            color="$textMuted"
+          />
+          <Text size="lg" fontWeight="$semibold" color="$textPrimary">
+            Finance
+          </Text>
+        </HStack>
+      </HStack>
+
+      {/* Cards */}
+      <VStack gap="$3">
+        {/* Net Balance Card */}
+        <NetBalanceCard income={income} expense={expense} />
+
+        {/* Income & Expense Cards */}
+        <HStack gap="$3">
+          <ReportsMetricsCard
+            title="Income (MTD)"
+            value={income}
+            isPositive={true}
+          />
+          <ReportsMetricsCard
+            title="Expense (MTD)"
+            value={expense}
+            isPositive={false}
+          />
+        </HStack>
+
+        {/* Navigation Link */}
+        <Pressable onPress={() => router.push('/(app)/finance/transactions' as any)}>
+          <HStack
+            justifyContent="center"
+            alignItems="center"
+            gap="$1"
+            py="$2"
+          >
+            <Text size="sm" color="$textMuted">
+              View Transactions
+            </Text>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={16}
+              color="#9ca3af"
+            />
+          </HStack>
+        </Pressable>
+      </VStack>
+    </VStack>
   );
 }
+
+function EventsSummarySection() {
+  const { nextEvent, eventsIn7Days, eventsIn30Days } = useEventsSummary();
+  const router = useRouter();
+  const colors = useThemedColors();
+
+  return (
+    <VStack gap="$3">
+      {/* Section Header */}
+      <HStack justifyContent="space-between" alignItems="center">
+        <HStack gap="$2" alignItems="center">
+          <MaterialCommunityIcons
+            name="calendar"
+            size={20}
+            color="$textMuted"
+          />
+          <Text size="lg" fontWeight="$semibold" color="$textPrimary">
+            Events
+          </Text>
+        </HStack>
+      </HStack>
+
+      {/* Next Event Card */}
+      {nextEvent ? (
+        <Box
+          bg={colors.background.card}
+          borderRadius="$lg"
+          borderWidth={1}
+          borderColor={colors.border.primary}
+          p="$4"
+        >
+          <VStack gap="$2">
+            <Text size="xs" color={colors.text.muted} fontWeight="$medium">
+              Next Event
+            </Text>
+            <Text size="lg" fontWeight="$semibold" color={colors.text.primary}>
+              {nextEvent.title}
+            </Text>
+            <Text size="sm" color={colors.text.secondary}>
+              {formatDateTime(nextEvent.startDateTime)}
+            </Text>
+          </VStack>
+        </Box>
+      ) : (
+        <Box
+          bg={colors.background.card}
+          borderRadius="$lg"
+          borderWidth={1}
+          borderColor={colors.border.primary}
+          p="$4"
+        >
+          <Text size="sm" color={colors.text.muted}>
+            No upcoming events
+          </Text>
+        </Box>
+      )}
+
+      {/* Event Counts */}
+      <HStack gap="$3">
+        <Box
+          flex={1}
+          bg={colors.background.card}
+          borderRadius="$lg"
+          borderWidth={1}
+          borderColor={colors.border.primary}
+          p="$3"
+        >
+          <VStack alignItems="center" gap="$1">
+            <Text size="xl" fontWeight="$bold" color={colors.text.primary}>
+              {eventsIn7Days}
+            </Text>
+            <Text size="xs" color={colors.text.muted}>
+              Next 7 days
+            </Text>
+          </VStack>
+        </Box>
+        <Box
+          flex={1}
+          bg={colors.background.card}
+          borderRadius="$lg"
+          borderWidth={1}
+          borderColor={colors.border.primary}
+          p="$3"
+        >
+          <VStack alignItems="center" gap="$1">
+            <Text size="xl" fontWeight="$bold" color={colors.text.primary}>
+              {eventsIn30Days}
+            </Text>
+            <Text size="xs" color={colors.text.muted}>
+              Next 30 days
+            </Text>
+          </VStack>
+        </Box>
+      </HStack>
+
+      {/* Navigation Link */}
+      <Pressable onPress={() => router.push('/(app)/events' as any)}>
+        <HStack
+          justifyContent="center"
+          alignItems="center"
+          gap="$1"
+          py="$2"
+        >
+          <Text size="sm" color="$textMuted">
+            View Calendar
+          </Text>
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={16}
+            color="#9ca3af"
+          />
+        </HStack>
+      </Pressable>
+    </VStack>
+  );
+}
+
+function MedicalAlertsSection() {
+  const alerts = useMedicalAlerts();
+  const router = useRouter();
+
+  return (
+    <VStack gap="$3">
+      {/* Section Header */}
+      <HStack justifyContent="space-between" alignItems="center">
+        <HStack gap="$2" alignItems="center">
+          <MaterialCommunityIcons
+            name="medical-bag"
+            size={20}
+            color="$textMuted"
+          />
+          <Text size="lg" fontWeight="$semibold" color="$textPrimary">
+            Medical Alerts
+          </Text>
+        </HStack>
+      </HStack>
+
+      {/* Alert Cards Grid */}
+      <HStack gap="$2" flexWrap="wrap">
+        <AlertCard
+          title="Low Stock"
+          count={alerts.lowStockCount}
+          alertType="warning"
+          icon="alert-circle-outline"
+          description="Below threshold"
+        />
+        <AlertCard
+          title="Expiring Soon"
+          count={alerts.expiringSoonCount}
+          alertType="warning"
+          icon="clock-alert-outline"
+          description="Within 30 days"
+        />
+        <AlertCard
+          title="Out of Stock"
+          count={alerts.outOfStockCount}
+          alertType="error"
+          icon="package-variant-remove"
+          description="Need restocking"
+        />
+      </HStack>
+
+      {/* Navigation Link */}
+      <Pressable onPress={() => router.push('/(app)/medicals/inventory' as any)}>
+        <HStack
+          justifyContent="center"
+          alignItems="center"
+          gap="$1"
+          py="$2"
+        >
+          <Text size="sm" color="$textMuted">
+            View Inventory
+          </Text>
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={16}
+            color="#9ca3af"
+          />
+        </HStack>
+      </Pressable>
+    </VStack>
+  );
+}
+
+function EmptyState() {
+  const colors = useThemedColors();
+
+  return (
+    <Box flex={1} justifyContent="center" alignItems="center" py="$20">
+      <VStack gap="$4" alignItems="center">
+        <MaterialCommunityIcons
+          name="home-variant-outline"
+          size={48}
+          color={colors.text.muted}
+        />
+        <Text size="lg" color={colors.text.muted} textAlign="center">
+          No tools enabled
+        </Text>
+        <Text size="sm" color={colors.text.muted} textAlign="center">
+          Enable tools in workspace settings to see them here.
+        </Text>
+      </VStack>
+    </Box>
+  );
+}
+
+// ============================================================================
+// Main Dashboard Component
+// ============================================================================
+
+export default function Dashboard() {
+  const colors = useThemedColors();
+
+  // Get enabled tools from workspace config
+  const activeWorkspace = useSelector(
+    (state: RootState) => state.auth.activeWorkspace
+  );
+  const workspaces = useSelector((state: RootState) => state.auth.workspaces);
+  const enabledTools = workspaces[activeWorkspace]?.enabledTools || {
+    finance: true,
+    events: true,
+    medicals: true,
+  };
+
+  // Determine which sections to show
+  const showFinance = enabledTools.finance;
+  const showEvents = enabledTools.events;
+  const showMedicals = enabledTools.medicals;
+
+  // Check if any tools are enabled
+  const hasEnabledTools = showFinance || showEvents || showMedicals;
+
+  return (
+    <ScrollView
+      flex={1}
+      bg={colors.background.primary}
+      contentContainerStyle={{ flexGrow: 1 }}
+      px="$4"
+      py="$6"
+    >
+      {/* Workspace Title */}
+      <Box mb="$6">
+        <Text size="xl" fontWeight="$bold" color={colors.text.primary}>
+          {activeWorkspace} Workspace
+        </Text>
+        <Text size="sm" color={colors.text.muted}>
+          Quick overview
+        </Text>
+      </Box>
+
+      {/* Content */}
+      {!hasEnabledTools ? (
+        <EmptyState />
+      ) : (
+        <VStack gap="$8">
+          {/* Finance Section */}
+          {showFinance && <FinanceSummarySection />}
+
+          {/* Events Section */}
+          {showEvents && <EventsSummarySection />}
+
+          {/* Medicals Section */}
+          {showMedicals && <MedicalAlertsSection />}
+        </VStack>
+      )}
+    </ScrollView>
+  );
+}
+

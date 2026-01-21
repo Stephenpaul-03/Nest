@@ -11,6 +11,7 @@ import { FiltersModal } from '@/components/transactions/FiltersModal';
 import { TransactionModal } from '@/components/transactions/TransactionModal';
 import { TransactionRow } from '@/components/transactions/TransactionRow';
 import { useThemedColors } from '@/constants/colors';
+import { RootState } from '@/src/store';
 import {
   duplicateLastTransaction,
   openAddModal,
@@ -35,7 +36,7 @@ import {
 import { Transaction, TransactionFilters, TransactionType } from '@/src/types/transaction';
 import {
   calculateTotal,
-  formatCurrency,
+  formatCurrencyWithSymbol,
   getUniqueTags,
   matchesFilters,
   sortByDate
@@ -65,6 +66,12 @@ export default function Transactions() {
   
   // Responsive layout
   const isMobile = sidebarState.isMobile;
+  
+  // Get currency symbol from workspace settings
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   // Redux state
   const incomeTransactions = useSelector(selectIncomeTransactions);
@@ -445,7 +452,7 @@ export default function Transactions() {
               Expenses
             </Text>
             <Text size="xs" color={colors.text.muted}>
-              ${formatCurrency(expenseTotal)}
+              {currencySymbol}{formatCurrencyWithSymbol(expenseTotal, currencySymbol, false)}
             </Text>
           </VStack>
         </Pressable>
@@ -471,7 +478,7 @@ export default function Transactions() {
               Income
             </Text>
             <Text size="xs" color={colors.text.muted}>
-              ${formatCurrency(incomeTotal)}
+              {currencySymbol}{formatCurrencyWithSymbol(incomeTotal, currencySymbol, false)}
             </Text>
           </VStack>
         </Pressable>
@@ -517,7 +524,7 @@ export default function Transactions() {
               Expenses
             </Text>
             <Text size="sm" color={colors.text.muted}>
-              (${formatCurrency(expenseTotal)})
+              ({currencySymbol}{formatCurrencyWithSymbol(expenseTotal, currencySymbol, false)})
             </Text>
           </HStack>
           
@@ -539,7 +546,7 @@ export default function Transactions() {
               Income
             </Text>
             <Text size="sm" color={colors.text.muted}>
-              (${formatCurrency(incomeTotal)})
+              ({currencySymbol}{formatCurrencyWithSymbol(incomeTotal, currencySymbol, false)})
             </Text>
           </HStack>
           

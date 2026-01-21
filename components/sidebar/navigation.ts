@@ -47,12 +47,6 @@ export const navigationItems: NavItem[] = [
         icon: 'calendar-month',
         accentColor: '#4fbfa5', // muted mint
       },
-      {
-        title: 'Timeline',
-        path: '/events/timeline',
-        icon: 'upcoming',
-        accentColor: '#9a7fdc', // muted violet
-      },
     ],
   },
 

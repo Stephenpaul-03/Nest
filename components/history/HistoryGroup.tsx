@@ -4,9 +4,10 @@
  */
 
 import { useThemedColors } from '@/constants/colors';
+import { RootState } from '@/src/store';
 import { Transaction } from '@/src/types/transaction';
 import { TransactionGroup } from '@/src/utils/historyHelpers';
-import { formatCurrency } from '@/src/utils/transactionHelpers';
+import { formatCurrencyWithSymbol } from '@/src/utils/transactionHelpers';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   Box,
@@ -16,6 +17,7 @@ import {
   VStack,
 } from '@gluestack-ui/themed';
 import React from 'react';
+import { useSelector } from 'react-redux';
 
 interface HistoryGroupProps {
   group: TransactionGroup;
@@ -35,6 +37,10 @@ export function HistoryGroup({
   showDeleted,
 }: HistoryGroupProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   const isIncome = group.transactions[0]?.type === 'income';
   const amountColor = isIncome ? (colors.isDark ? '#4ade80' : '#16a34a') : (colors.isDark ? '#f87171' : '#dc2626');
@@ -86,7 +92,7 @@ export function HistoryGroup({
                 fontWeight="$semibold"
                 color={runningBalance >= 0 ? (colors.isDark ? '#4ade80' : '#16a34a') : (colors.isDark ? '#f87171' : '#dc2626')}
               >
-                ${formatCurrency(runningBalance)}
+                {formatCurrencyWithSymbol(runningBalance, currencySymbol)}
               </Text>
             </VStack>
             
@@ -101,7 +107,7 @@ export function HistoryGroup({
                   fontWeight="$bold"
                   color={amountColor}
                 >
-                  {isIncome ? '+' : '-'}${formatCurrency(group.total)}
+                  {isIncome ? '+' : '-'}{formatCurrencyWithSymbol(group.total, currencySymbol)}
                 </Text>
               </VStack>
             </Pressable>
@@ -117,6 +123,7 @@ export function HistoryGroup({
               key={transaction.id}
               transaction={transaction}
               showDeleted={showDeleted}
+              currencySymbol={currencySymbol}
             />
           ))}
         </Box>
@@ -131,11 +138,13 @@ export function HistoryGroup({
 interface HistoryTransactionItemProps {
   transaction: Transaction;
   showDeleted: boolean;
+  currencySymbol?: string;
 }
 
 function HistoryTransactionItem({
   transaction,
   showDeleted,
+  currencySymbol = '$',
 }: HistoryTransactionItemProps) {
   const colors = useThemedColors();
   
@@ -213,7 +222,7 @@ function HistoryTransactionItem({
         color={amountColor}
         textDecorationLine={isDeleted ? 'line-through' : 'none'}
       >
-        {isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}
+        {isIncome ? '+' : '-'}{formatCurrencyWithSymbol(transaction.amount, currencySymbol)}
       </Text>
     </HStack>
   );
@@ -237,6 +246,10 @@ export function SummaryCard({
   type,
 }: SummaryCardProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   const isIncome = type === 'income';
   const amountColor = isIncome ? (colors.isDark ? '#4ade80' : '#16a34a') : (colors.isDark ? '#f87171' : '#dc2626');
@@ -259,7 +272,7 @@ export function SummaryCard({
             Total {type === 'income' ? 'Income' : 'Expenses'}
           </Text>
           <Text size="xl" fontWeight="$bold" color={amountColor}>
-            ${formatCurrency(total)}
+            {formatCurrencyWithSymbol(total, currencySymbol)}
           </Text>
         </VStack>
         
@@ -268,7 +281,7 @@ export function SummaryCard({
             Running Balance
           </Text>
           <Text size="xl" fontWeight="$bold" color={balanceColor}>
-            ${formatCurrency(runningBalance)}
+            {formatCurrencyWithSymbol(runningBalance, currencySymbol)}
           </Text>
         </VStack>
         

@@ -4,18 +4,20 @@
  */
 
 import { useThemedColors } from '@/constants/colors';
+import { RootState } from '@/src/store';
 import { TopCategory, TopDay } from '@/src/utils/reportHelpers';
-import { formatCurrency } from '@/src/utils/transactionHelpers';
+import { formatCurrencyWithSymbol } from '@/src/utils/transactionHelpers';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-    Box,
-    HStack,
-    Pressable,
-    ScrollView,
-    Text,
-    VStack,
+  Box,
+  HStack,
+  Pressable,
+  ScrollView,
+  Text,
+  VStack,
 } from '@gluestack-ui/themed';
 import React from 'react';
+import { useSelector } from 'react-redux';
 
 interface TopThreeCardProps {
   topCategories: TopCategory[];
@@ -31,6 +33,10 @@ export function TopThreeCard({
   onDayPress,
 }: TopThreeCardProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   return (
     <Box
@@ -80,6 +86,7 @@ export function TopThreeCard({
                         rank={index + 1}
                         label={item.category}
                         value={item.total}
+                        currencySymbol={currencySymbol}
                         subtitle={`${item.transactionCount} transaction${item.transactionCount !== 1 ? 's' : ''} • ${item.percentage.toFixed(1)}% of total`}
                       />
                     </Pressable>
@@ -112,6 +119,7 @@ export function TopThreeCard({
                         rank={index + 1}
                         label={formatDayLabel(item.date)}
                         value={item.total}
+                        currencySymbol={currencySymbol}
                         subtitle={`${item.transactionCount} transaction${item.transactionCount !== 1 ? 's' : ''}`}
                       />
                     </Pressable>
@@ -134,9 +142,10 @@ interface TopThreeItemProps {
   label: string;
   value: number;
   subtitle: string;
+  currencySymbol?: string;
 }
 
-function TopThreeItem({ rank, label, value, subtitle }: TopThreeItemProps) {
+function TopThreeItem({ rank, label, value, subtitle, currencySymbol = '$' }: TopThreeItemProps) {
   const colors = useThemedColors();
   
   // Rank badge colors
@@ -185,7 +194,7 @@ function TopThreeItem({ rank, label, value, subtitle }: TopThreeItemProps) {
       
       {/* Value */}
       <Text size="md" fontWeight="$bold" color="#ef4444">
-        ${formatCurrency(value)}
+        {formatCurrencyWithSymbol(value, currencySymbol)}
       </Text>
     </HStack>
   );

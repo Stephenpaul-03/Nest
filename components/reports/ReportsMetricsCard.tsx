@@ -4,16 +4,18 @@
  */
 
 import { useThemedColors } from '@/constants/colors';
-import { formatCurrency } from '@/src/utils/transactionHelpers';
+import { RootState } from '@/src/store';
+import { formatCurrencyWithSymbol } from '@/src/utils/transactionHelpers';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-    Box,
-    HStack,
-    Pressable,
-    Text,
-    VStack,
+  Box,
+  HStack,
+  Pressable,
+  Text,
+  VStack,
 } from '@gluestack-ui/themed';
 import React from 'react';
+import { useSelector } from 'react-redux';
 
 interface ReportsMetricsCardProps {
   title: string;
@@ -37,6 +39,10 @@ export function ReportsMetricsCard({
   onPress,
 }: ReportsMetricsCardProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   const valueColor = isPositive === undefined 
     ? colors.text.primary
@@ -61,7 +67,7 @@ export function ReportsMetricsCard({
         
         {/* Value */}
         <Text size="2xl" fontWeight="$bold" color={valueColor}>
-          ${formatCurrency(value)}
+          {formatCurrencyWithSymbol(value, currencySymbol)}
         </Text>
         
         {/* Change indicator */}
@@ -121,6 +127,10 @@ interface NetBalanceCardProps {
 
 export function NetBalanceCard({ income, expense, change }: NetBalanceCardProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   const netBalance = income - expense;
   const isPositive = netBalance >= 0;
@@ -148,7 +158,7 @@ export function NetBalanceCard({ income, expense, change }: NetBalanceCardProps)
         {/* Net Balance Value */}
         <HStack alignItems="baseline" gap="$2">
           <Text size="3xl" fontWeight="$bold" color={valueColor}>
-            ${formatCurrency(netBalance)}
+            {formatCurrencyWithSymbol(netBalance, currencySymbol)}
           </Text>
           <Text size="sm" color={colors.text.muted}>
             {isPositive ? 'surplus' : 'deficit'}
@@ -169,7 +179,7 @@ export function NetBalanceCard({ income, expense, change }: NetBalanceCardProps)
               </Text>
             </HStack>
             <Text size="sm" fontWeight="$semibold" color={colors.isDark ? '#4ade80' : '#16a34a'}>
-              +${formatCurrency(income)}
+              +{formatCurrencyWithSymbol(income, currencySymbol)}
             </Text>
           </VStack>
           
@@ -185,7 +195,7 @@ export function NetBalanceCard({ income, expense, change }: NetBalanceCardProps)
               </Text>
             </HStack>
             <Text size="sm" fontWeight="$semibold" color={colors.isDark ? '#f87171' : '#dc2626'}>
-              -${formatCurrency(expense)}
+              -{formatCurrencyWithSymbol(expense, currencySymbol)}
             </Text>
           </VStack>
         </HStack>

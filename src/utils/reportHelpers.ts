@@ -257,7 +257,8 @@ export function groupExpensesByCategory(
  */
 export function getCategoryDrillDown(
   transactions: Transaction[],
-  category: string
+  category: string,
+  currencySymbol: string = '$'
 ): DrillDownData {
   const categoryTransactions = transactions.filter(
     (t) => t.type === 'expense' && t.category === category && !t.deleted
@@ -273,7 +274,7 @@ export function getCategoryDrillDown(
   return {
     type: 'category',
     title: category,
-    subtitle: `${categoryTransactions.length} transactions • Total: $${formatCurrency(total)}`,
+    subtitle: `${categoryTransactions.length} transactions • Total: ${currencySymbol}${formatCurrency(total)}`,
     transactions: categoryTransactions,
   };
 }
@@ -283,7 +284,8 @@ export function getCategoryDrillDown(
  */
 export function getDayDrillDown(
   transactions: Transaction[],
-  date: string
+  date: string,
+  currencySymbol: string = '$'
 ): DrillDownData {
   const dayTransactions = transactions.filter(
     (t) => t.type === 'expense' && t.date === date && !t.deleted
@@ -299,7 +301,7 @@ export function getDayDrillDown(
   return {
     type: 'day',
     title: formatDayLabel(date),
-    subtitle: `${dayTransactions.length} transactions • Total: $${formatCurrency(total)}`,
+    subtitle: `${dayTransactions.length} transactions • Total: ${currencySymbol}${formatCurrency(total)}`,
     transactions: dayTransactions,
   };
 }
@@ -447,18 +449,19 @@ export function getYearRange(year: number): DateRange {
  */
 export function getTrendInfo(
   change: number,
-  changePercent: number
+  changePercent: number,
+  currencySymbol: string = '$'
 ): { indicator: 'increased' | 'decreased' | 'neutral'; text: string; color: string } {
   if (change > 0) {
     return {
       indicator: 'increased',
-      text: `+${formatCurrency(change)} (+${Math.abs(changePercent).toFixed(1)}%)`,
+      text: `+${currencySymbol}${formatCurrency(change)} (+${Math.abs(changePercent).toFixed(1)}%)`,
       color: '#22c55e', // Green
     };
   } else if (change < 0) {
     return {
       indicator: 'decreased',
-      text: `-${formatCurrency(Math.abs(change))} (-${Math.abs(changePercent).toFixed(1)}%)`,
+      text: `-${currencySymbol}${formatCurrency(Math.abs(change))} (-${Math.abs(changePercent).toFixed(1)}%)`,
       color: '#ef4444', // Red
     };
   }

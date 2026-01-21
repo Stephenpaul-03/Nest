@@ -4,11 +4,11 @@
  */
 
 import {
-    DEFAULT_EXPENSE_CATEGORIES,
-    DEFAULT_INCOME_CATEGORIES,
-    Transaction,
-    TransactionFilters,
-    TransactionType,
+  DEFAULT_EXPENSE_CATEGORIES,
+  DEFAULT_INCOME_CATEGORIES,
+  Transaction,
+  TransactionFilters,
+  TransactionType,
 } from '@/src/types/transaction';
 
 /**
@@ -44,6 +44,22 @@ export function formatCurrency(amount: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(amount));
+}
+
+/**
+ * Format currency with symbol for display
+ * @param amount - The amount to format
+ * @param symbol - The currency symbol to prepend (e.g., "$", "€", "£", "¥")
+ * @param isNegative - Whether to show negative sign (true = show minus, false = hide for expense display)
+ */
+export function formatCurrencyWithSymbol(amount: number, symbol: string = '$', isNegative: boolean = true): string {
+  const formatted = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(amount));
+  
+  const sign = isNegative && amount < 0 ? '-' : '';
+  return `${sign}${symbol}${formatted}`;
 }
 
 /**
@@ -275,5 +291,19 @@ export function groupByDate(transactions: Transaction[]): Record<string, Transac
   }
   
   return grouped;
+}
+
+/**
+ * Get transactions for the current month
+ */
+export function getCurrentMonthTransactions(transactions: Transaction[]): Transaction[] {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  return transactions.filter((t) => {
+    const [year, month, day] = t.date.split('-').map(Number);
+    return year === currentYear && month === currentMonth;
+  });
 }
 

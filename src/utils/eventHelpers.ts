@@ -4,15 +4,15 @@
  */
 
 import {
-    DayCellData,
-    Event,
-    EventFormData,
-    MONTHS,
-    RECURRENCE_LABELS,
-    SHORT_MONTHS,
-    TimePeriod,
-    WeekCellData,
-    WeekStartDay
+  DayCellData,
+  Event,
+  EventFormData,
+  MONTHS,
+  RECURRENCE_LABELS,
+  SHORT_MONTHS,
+  TimePeriod,
+  WeekCellData,
+  WeekStartDay
 } from '@/src/types/event';
 
 // ============================================================================
@@ -649,5 +649,26 @@ export function sortEventsForDisplay(events: Event[]): Event[] {
     if (!a.isAllDay && b.isAllDay) return 1;
     return new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime();
   });
+}
+
+/**
+ * Get upcoming events within a number of days
+ */
+export function getUpcomingEvents(events: Event[], days: number): Event[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + days);
+  
+  return events
+    .filter((event) => {
+      const eventDate = new Date(event.startDateTime);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate >= today && eventDate <= endDate;
+    })
+    .sort((a, b) => {
+      return new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime();
+    });
 }
 

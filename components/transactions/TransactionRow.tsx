@@ -4,17 +4,19 @@
  */
 
 import { useThemedColors } from '@/constants/colors';
+import { RootState } from '@/src/store';
 import { Transaction } from '@/src/types/transaction';
-import { formatCurrency, formatDate } from '@/src/utils/transactionHelpers';
+import { formatCurrencyWithSymbol, formatDate } from '@/src/utils/transactionHelpers';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-    Box,
-    HStack,
-    Pressable,
-    Text,
-    VStack,
+  Box,
+  HStack,
+  Pressable,
+  Text,
+  VStack,
 } from '@gluestack-ui/themed';
 import React from 'react';
+import { useSelector } from 'react-redux';
 
 interface TransactionRowProps {
   transaction: Transaction;
@@ -24,6 +26,10 @@ interface TransactionRowProps {
 
 export function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   const isIncome = transaction.type === 'income';
   const amountColor = isIncome ? (colors.isDark ? '#4ade80' : '#16a34a') : (colors.isDark ? '#f87171' : '#dc2626');
@@ -88,7 +94,7 @@ export function TransactionRow({ transaction, onEdit, onDelete }: TransactionRow
               fontWeight="$bold"
               color={amountColor}
             >
-              {isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}
+              {isIncome ? '+' : '-'}{formatCurrencyWithSymbol(transaction.amount, currencySymbol)}
             </Text>
           </HStack>
           
@@ -160,6 +166,10 @@ export function TransactionRow({ transaction, onEdit, onDelete }: TransactionRow
  */
 export function TransactionRowCompact({ transaction, onEdit, onDelete }: TransactionRowProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   const isIncome = transaction.type === 'income';
   const amountColor = isIncome ? (colors.isDark ? '#4ade80' : '#16a34a') : (colors.isDark ? '#f87171' : '#dc2626');
@@ -218,7 +228,7 @@ export function TransactionRowCompact({ transaction, onEdit, onDelete }: Transac
             fontWeight="$bold"
             color={amountColor}
           >
-            {isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}
+            {isIncome ? '+' : '-'}{formatCurrencyWithSymbol(transaction.amount, currencySymbol)}
           </Text>
           
           <Pressable onPress={onEdit} hitSlop={8} p="$1">

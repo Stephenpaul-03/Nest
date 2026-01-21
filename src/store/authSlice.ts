@@ -1,4 +1,3 @@
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export const authStorageKey = 'auth';
@@ -14,12 +13,14 @@ export interface EnabledTools {
 export interface WorkspaceConfig {
   name: string;
   enabledTools: EnabledTools;
+  currencySymbol?: string; // Currency symbol for this workspace (e.g., "$", "€", "£", "¥")
 }
 
 interface AuthState {
   isAuthenticated: boolean;
   activeWorkspace: string;
   workspaces: Record<string, WorkspaceConfig>;
+  globalCurrencySymbol: string; // Fallback/default currency symbol
 }
 
 // Default tools for new workspaces
@@ -34,10 +35,12 @@ const defaultWorkspaces: Record<string, WorkspaceConfig> = {
   'Personal': {
     name: 'Personal',
     enabledTools: { ...defaultEnabledTools },
+    currencySymbol: '$',
   },
   'Family': {
     name: 'Family',
     enabledTools: { ...defaultEnabledTools },
+    currencySymbol: '$',
   },
 };
 
@@ -45,6 +48,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   activeWorkspace: 'Personal',
   workspaces: { ...defaultWorkspaces },
+  globalCurrencySymbol: '$',
 };
 
 const authSlice = createSlice({
@@ -59,9 +63,10 @@ const authSlice = createSlice({
       state.activeWorkspace = 'Personal';
       // Reset to default workspaces
       state.workspaces = {
-        'Personal': { name: 'Personal', enabledTools: { ...defaultEnabledTools } },
-        'Family': { name: 'Family', enabledTools: { ...defaultEnabledTools } },
+        'Personal': { name: 'Personal', enabledTools: { ...defaultEnabledTools }, currencySymbol: '$' },
+        'Family': { name: 'Family', enabledTools: { ...defaultEnabledTools }, currencySymbol: '$' },
       };
+      state.globalCurrencySymbol = '$';
     },
     setActiveWorkspace(state, action: PayloadAction<string>) {
       state.activeWorkspace = action.payload;
@@ -72,9 +77,25 @@ const authSlice = createSlice({
         state.workspaces[workspace].enabledTools[tool] = !state.workspaces[workspace].enabledTools[tool];
       }
     },
+    setWorkspaceCurrencySymbol(state, action: PayloadAction<{ workspace: string; symbol: string }>) {
+      const { workspace, symbol } = action.payload;
+      if (state.workspaces[workspace]) {
+        state.workspaces[workspace].currencySymbol = symbol;
+      }
+    },
+    setGlobalCurrencySymbol(state, action: PayloadAction<string>) {
+      state.globalCurrencySymbol = action.payload;
+    },
   },
 });
 
-export const { login, logout, setActiveWorkspace, toggleTool } = authSlice.actions;
+export const { 
+  login, 
+  logout, 
+  setActiveWorkspace, 
+  toggleTool, 
+  setWorkspaceCurrencySymbol, 
+  setGlobalCurrencySymbol 
+} = authSlice.actions;
 export default authSlice.reducer;
 

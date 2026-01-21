@@ -4,26 +4,28 @@
  */
 
 import { useThemedColors } from '@/constants/colors';
+import { RootState } from '@/src/store';
 import { Transaction } from '@/src/types/transaction';
 import { DrillDownData } from '@/src/utils/reportHelpers';
-import { formatCurrency, formatDate } from '@/src/utils/transactionHelpers';
+import { formatCurrencyWithSymbol, formatDate } from '@/src/utils/transactionHelpers';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-    Box,
-    Button,
-    HStack,
-    Modal,
-    ModalBackdrop,
-    ModalBody,
-    ModalCloseButton,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    ScrollView,
-    Text,
-    VStack,
+  Box,
+  Button,
+  HStack,
+  Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ScrollView,
+  Text,
+  VStack,
 } from '@gluestack-ui/themed';
 import React from 'react';
+import { useSelector } from 'react-redux';
 
 interface ReportsDrillDownModalProps {
   isOpen: boolean;
@@ -33,6 +35,10 @@ interface ReportsDrillDownModalProps {
 
 export function ReportsDrillDownModal({ isOpen, onClose, data }: ReportsDrillDownModalProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   if (!data) return null;
   
@@ -86,6 +92,7 @@ export function ReportsDrillDownModal({ isOpen, onClose, data }: ReportsDrillDow
                     key={transaction.id}
                     transaction={transaction}
                     amountColor={amountColor}
+                    currencySymbol={currencySymbol}
                   />
                 ))
               )}
@@ -114,13 +121,16 @@ export function ReportsDrillDownModal({ isOpen, onClose, data }: ReportsDrillDow
 interface ReportsDrillDownTransactionItemProps {
   transaction: Transaction;
   amountColor: string;
+  currencySymbol?: string;
 }
 
 function ReportsDrillDownTransactionItem({
   transaction,
   amountColor,
+  currencySymbol = '$',
 }: ReportsDrillDownTransactionItemProps) {
   const colors = useThemedColors();
+  const iconBg = colors.isDark ? '#450a0a' : '#fef2f2';
   
   const isDeleted = transaction.deleted;
   
@@ -216,13 +226,10 @@ function ReportsDrillDownTransactionItem({
           color={amountColor}
           textDecorationLine={isDeleted ? 'line-through' : 'none'}
         >
-          -${formatCurrency(transaction.amount)}
+          -{formatCurrencyWithSymbol(transaction.amount, currencySymbol)}
         </Text>
       </HStack>
     </Box>
   );
 }
-
-// Reusable iconBg constant
-const iconBg = '#fef2f2';
 

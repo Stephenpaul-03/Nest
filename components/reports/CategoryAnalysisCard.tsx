@@ -4,18 +4,20 @@
  */
 
 import { useThemedColors } from '@/constants/colors';
+import { RootState } from '@/src/store';
 import { CategoryAnalysis } from '@/src/utils/reportHelpers';
-import { formatCurrency } from '@/src/utils/transactionHelpers';
+import { formatCurrencyWithSymbol } from '@/src/utils/transactionHelpers';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-    Box,
-    HStack,
-    Pressable,
-    ScrollView,
-    Text,
-    VStack,
+  Box,
+  HStack,
+  Pressable,
+  ScrollView,
+  Text,
+  VStack,
 } from '@gluestack-ui/themed';
 import React from 'react';
+import { useSelector } from 'react-redux';
 
 interface CategoryAnalysisCardProps {
   categories: CategoryAnalysis[];
@@ -29,6 +31,10 @@ export function CategoryAnalysisCard({
   onCategoryPress,
 }: CategoryAnalysisCardProps) {
   const colors = useThemedColors();
+  const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
+  const currencySymbol = useSelector((state: RootState) => 
+    state.auth.workspaces[activeWorkspace]?.currencySymbol || state.auth.globalCurrencySymbol
+  );
   
   return (
     <Box
@@ -54,7 +60,7 @@ export function CategoryAnalysisCard({
               Category Analysis
             </Text>
             <Text size="xs" color={colors.text.muted}>
-              {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'} • ${formatCurrency(totalExpense)} total
+              {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'} • {currencySymbol}{formatCurrencyWithSymbol(totalExpense, currencySymbol, false)} total
             </Text>
           </VStack>
         </HStack>
@@ -80,6 +86,7 @@ export function CategoryAnalysisCard({
                   category={category}
                   index={index}
                   total={totalExpense}
+                  currencySymbol={currencySymbol}
                   onPress={() => onCategoryPress(category.category)}
                 />
               ))
@@ -99,6 +106,7 @@ interface CategoryAnalysisItemProps {
   index: number;
   total: number;
   onPress: () => void;
+  currencySymbol?: string;
 }
 
 function CategoryAnalysisItem({
@@ -106,6 +114,7 @@ function CategoryAnalysisItem({
   index,
   total,
   onPress,
+  currencySymbol = '$',
 }: CategoryAnalysisItemProps) {
   const colors = useThemedColors();
   
@@ -154,7 +163,7 @@ function CategoryAnalysisItem({
         
         {/* Amount */}
         <Text size="md" fontWeight="$bold" color="#ef4444" w={80} textAlign="right">
-          ${formatCurrency(category.total)}
+          {formatCurrencyWithSymbol(category.total, currencySymbol)}
         </Text>
       </HStack>
     </Pressable>

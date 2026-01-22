@@ -1,38 +1,32 @@
 /**
- * Load Workspace Config (Multi-Workspace Support)
+ * Load Workspace Config
  * 
- * Loads the workspaces configuration from persistent storage.
+ * Loads the workspace configuration from persistent storage.
+ * Config.json is the single source of truth for workspace existence.
  */
 
-import type { WorkspaceConfig, WorkspacesConfig } from './types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { WorkspaceConfig } from './types';
 import {
-  getConfigKey,
-  getConfigStorage,
-  validateAndMigrateConfig
+  CONFIG_VERSION,
+  validateAndMigrateConfig,
+  WORKSPACE_CONFIG_KEY,
 } from './types';
 
 export interface LoadConfigResult {
   success: boolean;
-  config: WorkspacesConfig | null;
-  error?: string;
-}
-
-export interface ActiveWorkspaceResult {
-  success: boolean;
-  workspace: WorkspaceConfig | null;
-  activeWorkspaceId: string | null;
+  config: WorkspaceConfig | null;
   error?: string;
 }
 
 /**
- * Load workspaces config from storage
+ * Load workspace config from storage
+ * 
+ * @returns LoadConfigResult with config or null if not found
  */
 export async function loadConfig(): Promise<LoadConfigResult> {
-  const storage = await getConfigStorage();
-  const key = await getConfigKey();
-
   try {
-    const rawConfig = await storage.getItem(key);
+    const rawConfig = await AsyncStorage.getItem(WORKSPACE_CONFIG_KEY);
 
     if (!rawConfig) {
       console.log('[Config] No config found in storage');
@@ -62,7 +56,7 @@ export async function loadConfig(): Promise<LoadConfigResult> {
       };
     }
 
-    console.log('[Config] Config loaded successfully, workspaces:', Object.keys(config.workspaces).length);
+    console.log('[Config] Config loaded successfully');
     return { success: true, config };
 
   } catch (error) {
@@ -76,50 +70,23 @@ export async function loadConfig(): Promise<LoadConfigResult> {
 }
 
 /**
- * Get the active workspace config
+ * Get workspace config (alias for loadConfig for convenience)
  */
-export async function getActiveWorkspace(): Promise<ActiveWorkspaceResult> {
+export async function getWorkspaceConfig(): Promise<WorkspaceConfig | null> {
   const result = await loadConfig();
-  
-  if (!result.success || !result.config) {
-    return { success: false, workspace: null, activeWorkspaceId: null, error: result.error };
-  }
-
-  const { activeWorkspaceId, workspaces } = result.config;
-
-  if (!activeWorkspaceId || !workspaces[activeWorkspaceId]) {
-    return { success: false, workspace: null, activeWorkspaceId: null, error: 'No active workspace' };
-  }
-
-  return { 
-    success: true, 
-    workspace: workspaces[activeWorkspaceId], 
-    activeWorkspaceId 
-  };
-}
-
-/**
- * Get a specific workspace by ID
- */
-export async function getWorkspace(workspaceId: string): Promise<WorkspaceConfig | null> {
-  const result = await loadConfig();
-  
-  if (!result.success || !result.config) {
-    return null;
-  }
-
-  return result.config.workspaces[workspaceId] || null;
+  return result.config;
 }
 
 /**
  * Check if config exists
+ * 
+ * This is the critical check for onboarding:
+ * - No config → onboarding required
+ * - Config exists → app allowed to load
  */
 export async function hasConfig(): Promise<boolean> {
-  const storage = await getConfigStorage();
-  const key = await getConfigKey();
-
   try {
-    const value = await storage.getItem(key);
+    const value = await AsyncStorage.getItem(WORKSPACE_CONFIG_KEY);
     return value !== null;
   } catch {
     return false;
@@ -130,13 +97,66 @@ export async function hasConfig(): Promise<boolean> {
  * Get raw config JSON (for debugging)
  */
 export async function getRawConfig(): Promise<string | null> {
-  const storage = await getConfigStorage();
-  const key = await getConfigKey();
-
   try {
-    return await storage.getItem(key);
+    return await AsyncStorage.getItem(WORKSPACE_CONFIG_KEY);
   } catch {
     return null;
+  }
+}
+
+/**
+ * Update workspace config with partial updates
+ * 
+ * Merges updates safely and persists to storage.
+ */
+export interface UpdateConfigResult {
+  success: boolean;
+  config: WorkspaceConfig | null;
+  error?: string;
+}
+
+export async function updateConfig(
+  updates: Partial<WorkspaceConfig>
+): Promise<UpdateConfigResult> {
+  const loadResult = await loadConfig();
+  
+  if (!loadResult.success || !loadResult.config) {
+    return { success: false, config: null, error: 'Config not found' };
+  }
+
+  const currentConfig = loadResult.config;
+
+  // Ensure version is always set to current version
+  const version = updates.version ?? currentConfig.version;
+  if (version !== CONFIG_VERSION) {
+    return { success: false, config: null, error: 'Invalid config version' };
+  }
+
+  // Prevent modifying createdAt
+  const { createdAt, ...restUpdates } = updates as any;
+
+  // Merge updates safely
+  const updatedConfig: WorkspaceConfig = {
+    ...currentConfig,
+    ...restUpdates,
+    version: CONFIG_VERSION,
+    createdAt: currentConfig.createdAt,
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    const jsonString = JSON.stringify(updatedConfig, null, 2);
+    await AsyncStorage.setItem(WORKSPACE_CONFIG_KEY, jsonString);
+    
+    console.log('[Config] Config updated successfully');
+    return { success: true, config: updatedConfig };
+  } catch (error) {
+    console.error('[Config] Error saving updated config:', error);
+    return { 
+      success: false, 
+      config: null, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
   }
 }
 

@@ -124,10 +124,8 @@ export default function Login() {
                     borderRadius="$lg"
                     borderWidth={1}
                     borderColor="$borderLight200"
-                    $dark={{
-                      bg: '$backgroundDark800',
-                      borderColor: '$borderDark700',
-                    }}
+                    $dark-bg="$backgroundDark800"
+                    $dark-borderColor="$borderDark700"
                   >
                     <Avatar size="md" borderRadius="$full">
                       <AvatarFallbackText>{user.name}</AvatarFallbackText>

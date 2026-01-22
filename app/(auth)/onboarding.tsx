@@ -2,7 +2,7 @@
  * Onboarding Screen
  * 
  * Minimal 4-step onboarding flow to create workspace config.
- * Supports creating and switching between multiple workspaces.
+ * Onboarding's ONLY responsibility: Create a valid config.json.
  * 
  * Steps:
  * 1. Workspace Name
@@ -14,8 +14,7 @@
 import { useThemeContext } from '@/src/context/ThemeContext';
 import { RootState } from '@/src/store';
 import type { User } from '@/src/store/authSlice';
-import { addMockUser, hydrateWorkspace, selectCurrentUser } from '@/src/store/authSlice';
-import { loadConfig } from '@/src/workspace/config/loadConfig';
+import { addMockUser, hydrateFromConfig, selectCurrentUser } from '@/src/store/authSlice';
 import { createWorkspace } from '@/src/workspace/config/saveConfig';
 import { DEFAULT_ACCENT_COLOR, DEFAULT_WORKSPACE_NAME } from '@/src/workspace/config/types';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -71,6 +70,7 @@ export default function Onboarding() {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
 
   // Form state
@@ -131,36 +131,40 @@ export default function Onboarding() {
 
   const handleComplete = async () => {
     setIsLoading(true);
+    setError(null);
 
     try {
-      // Create new workspace
-      const result = await createWorkspace(workspaceName.trim(), accentColor);
+      // Ensure we have a user ID
+      let userId = currentUser?.id;
+      let userDisplayName = displayName.trim();
 
-      if (!result.success || !result.workspace) {
-        console.error('[Onboarding] Failed to create workspace:', result.error);
+      // If no current user, create a mock user
+      if (!userId) {
+        userId = `user-${Date.now()}`;
+        const mockUser: User = {
+          id: userId,
+          name: userDisplayName,
+          email: `${userDisplayName.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+        };
+        dispatch(addMockUser(mockUser));
+      }
+
+      // Create new workspace with correct schema
+      const result = await createWorkspace(
+        workspaceName.trim(),
+        userId,
+        userDisplayName,
+        accentColor
+      );
+
+      if (!result.success || !result.config) {
+        setError(result.error || 'Failed to create workspace');
         setIsLoading(false);
         return;
       }
 
-      // Reload config to get the full config with active workspace
-      const configResult = await loadConfig();
-
-      if (configResult.success && configResult.config) {
-        dispatch(hydrateWorkspace({
-          config: result.workspace,
-          activeWorkspaceId: configResult.config.activeWorkspaceId,
-        }));
-      }
-
-      // If no current user, add a mock user with the display name
-      if (!currentUser) {
-        const mockUser: User = {
-          id: `user-${Date.now()}`,
-          name: displayName.trim(),
-          email: `${displayName.trim().toLowerCase().replace(/\s+/g, '.')}@example.com`,
-        };
-        dispatch(addMockUser(mockUser));
-      }
+      // Hydrate Redux from the new config
+      dispatch(hydrateFromConfig(result.config));
 
       // Show completion and redirect
       setIsComplete(true);
@@ -168,8 +172,9 @@ export default function Onboarding() {
         router.replace('/(app)/dashboard');
       }, 1500);
 
-    } catch (error) {
-      console.error('[Onboarding] Error completing onboarding:', error);
+    } catch (err) {
+      console.error('[Onboarding] Error completing onboarding:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
       setIsLoading(false);
     }
   };
@@ -224,6 +229,13 @@ export default function Onboarding() {
             />
           ))}
         </HStack>
+
+        {/* Error Message */}
+        {error && (
+          <Box bg="$error100" p="$3" borderRadius="$md">
+            <Text color="$error700" size="sm">{error}</Text>
+          </Box>
+        )}
 
         {/* Step 1: Workspace Name */}
         {currentStep === 0 && (

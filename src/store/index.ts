@@ -77,30 +77,12 @@ export const store = configureStore({
 export const persistor = persistStore(store);
 
 // ============================================================================
-// Workspace Change Detection
+// Export actions for manual workspace switching (dev mode)
 // ============================================================================
 
-// Subscribe to store changes to detect workspace switches
-// Only runs in development mode for mock data seeding
-let previousActiveWorkspace: string | null = null;
-
-store.subscribe(() => {
-  // Only run in development mode
-  if (!__DEV__) return;
-
-  const state = store.getState();
-  const currentActiveWorkspace = state.auth.activeWorkspace;
-
-  // Check if workspace has changed
-  if (previousActiveWorkspace !== currentActiveWorkspace) {
-    console.log(`[Store] Workspace change detected: ${previousActiveWorkspace} -> ${currentActiveWorkspace}`);
-    previousActiveWorkspace = currentActiveWorkspace;
-
-    // Seed mock data for the new workspace
-    // We use dispatch directly here since we're in a subscription callback
-    store.dispatch(switchWorkspace(currentActiveWorkspace));
-  }
-});
+// Re-export switchWorkspace for development mode use
+export { switchWorkspace };
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+

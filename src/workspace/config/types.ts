@@ -1,21 +1,29 @@
 /**
- * Multi-Workspace Config Types
+ * Workspace Config Types
  * 
- * Supports multiple workspaces per account with an active workspace selection.
+ * Single-workspace config system. Config.json is the single source of truth.
+ * This file defines the schema for workspace configuration.
+ * 
+ * Architecture Rule (NON-NEGOTIABLE):
+ * - Workspace existence and state are determined ONLY by config.json
+ * - Redux is a projection/cache, never the source of truth
  */
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 export const CONFIG_VERSION = 1;
-export const WORKSPACES_STORAGE_KEY = 'nest_workspaces';
+export const WORKSPACE_CONFIG_KEY = 'nest_workspace_config';
 
 // ============================================================================
-// Schema Definition
+// Schema Definition (LOCKED)
 // ============================================================================
+
+export interface WorkspaceMember {
+  displayName: string;
+  role: 'owner' | 'member';
+}
 
 export interface WorkspaceTools {
   finance: boolean;
@@ -23,14 +31,9 @@ export interface WorkspaceTools {
   medicals: boolean;
 }
 
-export interface WorkspaceMember {
-  displayName: string;
-  role: 'owner' | 'member';
-}
-
 export interface WorkspaceConfig {
-  /** Unique workspace ID */
-  id: string;
+  /** Schema version for future migrations */
+  version: number;
   
   /** Workspace display name */
   name: string;
@@ -41,22 +44,11 @@ export interface WorkspaceConfig {
   /** Enabled tools in this workspace */
   tools: WorkspaceTools;
   
+  /** Workspace members by userId */
+  members: Record<string, WorkspaceMember>;
+  
   /** ISO timestamp of workspace creation */
   createdAt: string;
-  
-  /** ISO timestamp of last active usage */
-  lastActiveAt: string;
-}
-
-export interface WorkspacesConfig {
-  /** Schema version for future migrations */
-  version: number;
-  
-  /** Currently active workspace ID */
-  activeWorkspaceId: string | null;
-  
-  /** All workspaces owned by this user */
-  workspaces: Record<string, WorkspaceConfig>;
   
   /** ISO timestamp of last update */
   updatedAt: string;
@@ -73,22 +65,28 @@ export const DEFAULT_TOOLS: WorkspaceTools = {
 };
 
 export const DEFAULT_ACCENT_COLOR = '#6366f1';
-
 export const DEFAULT_WORKSPACE_NAME = 'Personal';
 
-export function createWorkspace(
+export function createWorkspaceConfig(
   name: string,
-  id?: string,
+  ownerId: string,
+  ownerDisplayName: string,
   accentColor: string = DEFAULT_ACCENT_COLOR
 ): WorkspaceConfig {
   const now = new Date().toISOString();
   return {
-    id: id || `ws-${Date.now()}`,
+    version: CONFIG_VERSION,
     name,
     accentColor,
     tools: { ...DEFAULT_TOOLS },
+    members: {
+      [ownerId]: {
+        displayName: ownerDisplayName,
+        role: 'owner',
+      },
+    },
     createdAt: now,
-    lastActiveAt: now,
+    updatedAt: now,
   };
 }
 
@@ -96,8 +94,8 @@ export function createWorkspace(
 // Type Guards
 // ============================================================================
 
-export function isWorkspacesConfig(value: unknown): value is WorkspacesConfig {
-  if (value === null || value === undefined) {
+export function isWorkspaceConfig(value: unknown): value is WorkspaceConfig {
+  if (value === null || value === undefined || typeof value !== 'object') {
     return false;
   }
 
@@ -105,25 +103,12 @@ export function isWorkspacesConfig(value: unknown): value is WorkspacesConfig {
 
   return (
     typeof config.version === 'number' &&
-    typeof config.workspaces === 'object' &&
-    (config.activeWorkspaceId === null || typeof config.activeWorkspaceId === 'string')
-  );
-}
-
-export function isValidWorkspaceConfig(workspace: unknown): workspace is WorkspaceConfig {
-  if (workspace === null || workspace === undefined || typeof workspace !== 'object') {
-    return false;
-  }
-
-  const w = workspace as Record<string, unknown>;
-
-  return (
-    typeof w.id === 'string' &&
-    typeof w.name === 'string' &&
-    typeof w.accentColor === 'string' &&
-    typeof w.tools === 'object' &&
-    typeof w.createdAt === 'string' &&
-    typeof w.lastActiveAt === 'string'
+    typeof config.name === 'string' &&
+    typeof config.accentColor === 'string' &&
+    typeof config.tools === 'object' &&
+    typeof config.members === 'object' &&
+    typeof config.createdAt === 'string' &&
+    typeof config.updatedAt === 'string'
   );
 }
 
@@ -131,9 +116,9 @@ export function isValidWorkspaceConfig(workspace: unknown): workspace is Workspa
 // Validation & Migration
 // ============================================================================
 
-export function validateAndMigrateConfig(config: unknown): WorkspacesConfig | null {
-  if (!isWorkspacesConfig(config)) {
-    console.warn('[Config] Invalid workspaces config structure:', config);
+export function validateAndMigrateConfig(config: unknown): WorkspaceConfig | null {
+  if (!isWorkspaceConfig(config)) {
+    console.warn('[Config] Invalid workspace config structure:', config);
     return null;
   }
 
@@ -147,34 +132,6 @@ export function validateAndMigrateConfig(config: unknown): WorkspacesConfig | nu
     return null;
   }
 
-  // Validate all workspaces
-  const validatedWorkspaces: Record<string, WorkspaceConfig> = {};
-  
-  for (const [id, workspace] of Object.entries(config.workspaces)) {
-    if (isValidWorkspaceConfig(workspace)) {
-      validatedWorkspaces[id] = workspace;
-    } else {
-      console.warn('[Config] Invalid workspace config for:', id);
-    }
-  }
-
-  return {
-    version: CONFIG_VERSION,
-    activeWorkspaceId: config.activeWorkspaceId,
-    workspaces: validatedWorkspaces,
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-// ============================================================================
-// Storage Helpers
-// ============================================================================
-
-export async function getConfigStorage() {
-  return AsyncStorage;
-}
-
-export async function getConfigKey(): Promise<string> {
-  return WORKSPACES_STORAGE_KEY;
+  return config;
 }
 

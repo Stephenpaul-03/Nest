@@ -51,6 +51,9 @@ interface AuthState {
   activeWorkspace: string;
   workspaces: Record<string, WorkspaceConfig>;
   globalCurrencySymbol: string;
+  // Legacy properties for backward compatibility
+  user: User | null;
+  idToken: string | null;
 }
 
 const initialState: AuthState = {
@@ -60,6 +63,8 @@ const initialState: AuthState = {
   activeWorkspace: 'Personal',
   workspaces: { ...defaultWorkspaces },
   globalCurrencySymbol: '$',
+  user: null,
+  idToken: null,
 };
 
 const authSlice = createSlice({
@@ -129,6 +134,51 @@ const authSlice = createSlice({
     setGlobalCurrencySymbol(state, action: PayloadAction<string>) {
       state.globalCurrencySymbol = action.payload;
     },
+    /**
+     * Hydrate Redux state from config.json
+     * 
+     * This is the ONLY way workspace config enters Redux.
+     * Redux is a projection/cache of config.json, never the source of truth.
+     */
+    hydrateFromConfig(state, action: PayloadAction<{
+      name: string;
+      accentColor: string;
+      tools: EnabledTools;
+      members: Record<string, { displayName: string; role: 'owner' | 'member' }>;
+    }>) {
+      const config = action.payload;
+      
+      // Determine owner ID and display name from members
+      const ownerEntry = Object.entries(config.members).find(
+        ([_, member]) => member.role === 'owner'
+      );
+      
+      const ownerId = ownerEntry?.[0] || 'default';
+      const ownerDisplayName = ownerEntry?.[1].displayName || 'User';
+      
+      // Update active workspace to match config
+      state.activeWorkspace = config.name;
+      
+      // Update or create workspace entry
+      state.workspaces[config.name] = {
+        name: config.name,
+        enabledTools: config.tools,
+        currencySymbol: '$',
+      };
+      
+      // Ensure current user exists and matches owner
+      if (!state.users[ownerId]) {
+        state.users[ownerId] = {
+          id: ownerId,
+          name: ownerDisplayName,
+          email: `${ownerDisplayName.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+        };
+      }
+      state.currentUserId = ownerId;
+      state.user = state.users[ownerId];
+      state.idToken = 'mock-token';
+      state.isAuthenticated = true;
+    },
   },
 });
 
@@ -150,7 +200,8 @@ export const {
   setActiveWorkspace, 
   toggleTool, 
   setWorkspaceCurrencySymbol, 
-  setGlobalCurrencySymbol 
+  setGlobalCurrencySymbol,
+  hydrateFromConfig 
 } = authSlice.actions;
 
 // Add user and idToken to state for backward compatibility
@@ -159,15 +210,15 @@ authSlice.caseReducers.login = (state, action) => {
   state.users[user.id] = user;
   state.currentUserId = user.id;
   state.isAuthenticated = true;
-  (state as any).user = user;
-  (state as any).idToken = action.payload.idToken;
+  state.user = user;
+  state.idToken = action.payload.idToken;
 };
 
 authSlice.caseReducers.logout = (state) => {
   state.isAuthenticated = false;
   state.currentUserId = null;
-  (state as any).user = null;
-  (state as any).idToken = null;
+  state.user = null;
+  state.idToken = null;
   state.activeWorkspace = 'Personal';
   state.workspaces = {
     'Personal': { name: 'Personal', enabledTools: { ...defaultEnabledTools }, currencySymbol: '$' },

@@ -4,15 +4,18 @@ import { useThemeContext } from '@/src/context/ThemeContext';
 import { RootState } from '@/src/store';
 import {
   addMockUser,
+  hydrateFromConfig,
   logout,
-  selectAllUsers, selectCurrentUser,
+  selectAllUsers,
+  selectCurrentUser,
   setActiveWorkspace,
   setWorkspaceCurrencySymbol,
   switchAccount,
-  toggleTool,
   ToolKey,
   User
 } from '@/src/store/authSlice';
+import { updateConfig } from '@/src/workspace/config/loadConfig';
+import { DEFAULT_ACCENT_COLOR } from '@/src/workspace/config/types';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
   Avatar,
@@ -23,6 +26,8 @@ import {
   ButtonText,
   Heading,
   HStack,
+  Input,
+  InputField,
   Modal,
   ModalBackdrop,
   ModalBody,
@@ -31,10 +36,12 @@ import {
   ModalHeader,
   Pressable,
   ScrollView,
+  Spinner,
   Switch,
   Text,
   VStack,
 } from '@gluestack-ui/themed';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -83,6 +90,15 @@ const CURRENCY_OPTIONS = [
   { symbol: 'Kč', name: 'Czech Koruna', code: 'CZK' },
 ];
 
+const ACCENT_COLORS = [
+  { name: 'Indigo', value: '#6366f1' },
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Green', value: '#10b981' },
+  { name: 'Orange', value: '#f97316' },
+  { name: 'Pink', value: '#ec4899' },
+  { name: 'Purple', value: '#8b5cf6' },
+];
+
 export default function Settings() {
   const dispatch = useDispatch();
   const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
@@ -101,7 +117,17 @@ export default function Settings() {
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showAddAccountModal, setShowAddAccountModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showColorModal, setShowColorModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [switchingProgress, setSwitchingProgress] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Workspace settings state
+  const [newWorkspaceName, setNewWorkspaceName] = useState(activeWorkspace);
+  const [selectedColor, setSelectedColor] = useState(DEFAULT_ACCENT_COLOR);
+  const [localTools, setLocalTools] = useState(currentWorkspaceTools);
+  
   const { colorMode } = useThemeContext();
 
   const {
@@ -114,9 +140,7 @@ export default function Settings() {
 
   const handleLogout = () => {
     dispatch(logout());
-    import('expo-router').then(({ router }) => {
-      router.replace('/(auth)/login');
-    });
+    router.replace('/(auth)/login');
   };
 
   const handleWorkspaceChange = (workspace: string) => {
@@ -138,9 +162,7 @@ export default function Settings() {
         clearInterval(timer);
         setShowSwitchingModal(false);
         dispatch(setActiveWorkspace(workspace));
-        import('expo-router').then(({ router }) => {
-          router.replace('/(app)/dashboard');
-        });
+        router.replace('/(app)/dashboard');
       }
     }, interval);
   };
@@ -148,9 +170,7 @@ export default function Settings() {
   const handleAccountSwitch = (userId: string) => {
     setShowAccountModal(false);
     dispatch(switchAccount(userId));
-    import('expo-router').then(({ router }) => {
-      router.replace('/(app)/dashboard');
-    });
+    router.replace('/(app)/dashboard');
   };
 
   const handleAddNewAccount = () => {
@@ -173,18 +193,115 @@ export default function Settings() {
       dispatch(addMockUser(newUser));
     }
     
-    import('expo-router').then(({ router }) => {
-      router.replace('/(app)/dashboard');
-    });
+    router.replace('/(app)/dashboard');
   };
 
   const handleToolToggle = (tool: ToolKey) => {
-    dispatch(toggleTool({ workspace: activeWorkspace, tool }));
+    setLocalTools(prev => ({
+      ...prev,
+      [tool]: !prev[tool],
+    }));
   };
 
   const handleCurrencyChange = (symbol: string) => {
     dispatch(setWorkspaceCurrencySymbol({ workspace: activeWorkspace, symbol }));
     setShowCurrencyModal(false);
+  };
+
+  // ========================================
+  // Workspace Settings - Config-driven
+  // ========================================
+
+  const handleRenameWorkspace = async () => {
+    if (!newWorkspaceName.trim() || newWorkspaceName.trim() === activeWorkspace) {
+      setShowRenameModal(false);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const result = await updateConfig({ name: newWorkspaceName.trim() });
+      
+      if (result.success && result.config) {
+        // Hydrate Redux from updated config
+        dispatch(hydrateFromConfig({
+          name: result.config.name,
+          accentColor: result.config.accentColor,
+          tools: result.config.tools,
+          members: result.config.members,
+        }));
+        setShowRenameModal(false);
+      } else {
+        console.error('[Settings] Failed to rename workspace:', result.error);
+      }
+    } catch (error) {
+      console.error('[Settings] Error renaming workspace:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChangeColor = async (color: string) => {
+    setSelectedColor(color);
+    setIsSaving(true);
+    try {
+      const result = await updateConfig({ accentColor: color });
+      
+      if (result.success && result.config) {
+        dispatch(hydrateFromConfig({
+          name: result.config.name,
+          accentColor: result.config.accentColor,
+          tools: result.config.tools,
+          members: result.config.members,
+        }));
+        setShowColorModal(false);
+      }
+    } catch (error) {
+      console.error('[Settings] Error changing color:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleToggleTool = async (tool: ToolKey) => {
+    const newTools = { ...localTools, [tool]: !localTools[tool] };
+    setLocalTools(newTools);
+    
+    setIsSaving(true);
+    try {
+      const result = await updateConfig({ tools: newTools });
+      
+      if (result.success && result.config) {
+        dispatch(hydrateFromConfig({
+          name: result.config.name,
+          accentColor: result.config.accentColor,
+          tools: result.config.tools,
+          members: result.config.members,
+        }));
+      } else {
+        // Revert on failure
+        setLocalTools(currentWorkspaceTools);
+      }
+    } catch (error) {
+      console.error('[Settings] Error toggling tool:', error);
+      setLocalTools(currentWorkspaceTools);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteWorkspace = async () => {
+    setIsSaving(true);
+    try {
+      // TODO: Implement deleteConfig function in loadConfig module
+      // const deleted = await deleteConfig();
+      // For now, redirect to onboarding
+      router.replace('/(auth)/onboarding');
+    } catch (error) {
+      console.error('[Settings] Error deleting workspace:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const workspaceOptions = ['Personal', 'Family'];
@@ -261,10 +378,20 @@ export default function Settings() {
               </VStack>
             </Box>
 
+            {/* Workspace Settings Section */}
             <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor={border.primary}>
-              <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase" mb="$3">
-                Workspace
-              </Text>
+              <HStack justifyContent="space-between" alignItems="center" mb="$3">
+                <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase">
+                  Workspace
+                </Text>
+                <Pressable onPress={() => setShowRenameModal(true)}>
+                  <HStack alignItems="center" gap="$1">
+                    <MaterialIcons name="edit" size={16} color={toggle.on} />
+                    <Text size="xs" color={toggle.on}>Edit</Text>
+                  </HStack>
+                </Pressable>
+              </HStack>
+              
               <HStack alignItems="center" justifyContent="space-between">
                 <VStack>
                   <Text size="lg" fontWeight="$medium" color={text.primary}>
@@ -281,6 +408,72 @@ export default function Settings() {
               </HStack>
             </Box>
 
+            {/* Accent Color Section */}
+            <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor={border.primary}>
+              <HStack justifyContent="space-between" alignItems="center" mb="$3">
+                <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase">
+                  Accent Color
+                </Text>
+                <Pressable onPress={() => setShowColorModal(true)}>
+                  <HStack alignItems="center" gap="$1">
+                    <MaterialIcons name="edit" size={16} color={toggle.on} />
+                    <Text size="xs" color={toggle.on}>Change</Text>
+                  </HStack>
+                </Pressable>
+              </HStack>
+              
+              <HStack alignItems="center" gap="$3">
+                <Box 
+                  bg={ACCENT_COLORS.find(c => c.value === selectedColor)?.value || DEFAULT_ACCENT_COLOR} 
+                  width={32} 
+                  height={32} 
+                  borderRadius="$full" 
+                />
+                <Text size="md" fontWeight="$medium" color={text.primary}>
+                  {ACCENT_COLORS.find(c => c.value === selectedColor)?.name || 'Indigo'}
+                </Text>
+              </HStack>
+            </Box>
+
+            {/* Enabled Tools Section - Now Config-driven */}
+            <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor={border.primary}>
+              <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase" mb="$3">
+                Enabled Tools
+              </Text>
+              <VStack gap="$2">
+                {tools.map((tool) => (
+                  <HStack
+                    key={tool.key}
+                    alignItems="center"
+                    justifyContent="space-between"
+                    bg={background.cardAlt}
+                    p="$3"
+                    borderRadius="$md"
+                    borderWidth={1}
+                    borderColor={border.primary}
+                  >
+                    <HStack alignItems="center" gap="$3">
+                      <Box bg={background.hover} p="$2" borderRadius="$md">
+                        <MaterialIcons name={tool.icon} size={20} color={text.primary} />
+                      </Box>
+                      <Text size="md" fontWeight="$medium" color={text.primary}>
+                        {tool.label}
+                      </Text>
+                    </HStack>
+                    <Switch
+                      value={localTools[tool.key]}
+                      onToggle={() => handleToggleTool(tool.key)}
+                      size="md"
+                      trackColor={{ false: toggle.off, true: toggle.on }}
+                      thumbColor="#FFFFFF"
+                      isDisabled={isSaving}
+                    />
+                  </HStack>
+                ))}
+              </VStack>
+            </Box>
+
+            {/* Currency Symbol Section */}
             <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor={border.primary}>
               <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase" mb="$3">
                 Currency Symbol
@@ -307,42 +500,31 @@ export default function Settings() {
               </HStack>
             </Box>
 
-            <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor={border.primary}>
-              <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase" mb="$3">
-                Enabled Tools
+            {/* Delete Workspace Section */}
+            <Box 
+              bg={background.card} 
+              p="$4" 
+              borderRadius="$lg" 
+              borderWidth={1} 
+              borderColor="$error600"
+            >
+              <Text size="sm" fontWeight="$semibold" color="$error600" textTransform="uppercase" mb="$3">
+                Danger Zone
               </Text>
-              <VStack gap="$2">
-                {tools.map((tool) => (
-                  <HStack
-                    key={tool.key}
-                    alignItems="center"
-                    justifyContent="space-between"
-                    bg={background.cardAlt}
-                    p="$3"
-                    borderRadius="$md"
-                    borderWidth={1}
-                    borderColor={border.primary}
-                  >
-                    <HStack alignItems="center" gap="$3">
-                      <Box bg={background.hover} p="$2" borderRadius="$md">
-                        <MaterialIcons name={tool.icon} size={20} color={text.primary} />
-                      </Box>
-                      <Text size="md" fontWeight="$medium" color={text.primary}>
-                        {tool.label}
-                      </Text>
-                    </HStack>
-                    <Switch
-                      value={currentWorkspaceTools[tool.key]}
-                      onToggle={() => handleToolToggle(tool.key)}
-                      size="md"
-                      trackColor={{ false: toggle.off, true: toggle.on }}
-                      thumbColor="#FFFFFF"
-                    />
-                  </HStack>
-                ))}
-              </VStack>
+              <Text size="sm" color={text.secondary} mb="$3">
+                Deleting the workspace will remove all data and redirect you to onboarding.
+              </Text>
+              <Button 
+                variant="solid" 
+                action="negative" 
+                onPress={() => setShowDeleteModal(true)}
+                isDisabled={isSaving}
+              >
+                <ButtonText>Delete Workspace</ButtonText>
+              </Button>
             </Box>
 
+            {/* Appearance Section */}
             <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor={border.primary}>
               <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase" mb="$3">
                 Appearance
@@ -465,6 +647,7 @@ export default function Settings() {
         </ModalContent>
       </Modal>
 
+      {/* Workspace Selection Modal */}
       <Modal isOpen={showWorkspaceModal} onClose={() => setShowWorkspaceModal(false)} size="md">
         <ModalBackdrop />
         <ModalContent>
@@ -508,6 +691,91 @@ export default function Settings() {
         </ModalContent>
       </Modal>
 
+      {/* Rename Workspace Modal */}
+      <Modal isOpen={showRenameModal} onClose={() => setShowRenameModal(false)} size="md">
+        <ModalBackdrop />
+        <ModalContent>
+          <ModalHeader>
+            <Heading size="md">Rename Workspace</Heading>
+          </ModalHeader>
+          <ModalBody>
+            <VStack gap="$4" py="$2">
+              <Input
+                size="lg"
+                variant="outline"
+                borderColor={border.primary}
+                bg={background.card}
+              >
+                <InputField
+                  value={newWorkspaceName}
+                  onChangeText={setNewWorkspaceName}
+                  placeholder="Workspace name"
+                  placeholderTextColor={text.muted}
+                  color={text.primary}
+                />
+              </Input>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack gap="$3">
+              <Button variant="outline" action="secondary" onPress={() => setShowRenameModal(false)}>
+                <ButtonText>Cancel</ButtonText>
+              </Button>
+              <Button 
+                onPress={handleRenameWorkspace}
+                isDisabled={isSaving || !newWorkspaceName.trim()}
+              >
+                {isSaving ? <Spinner color="white" /> : <ButtonText>Rename</ButtonText>}
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Color Selection Modal */}
+      <Modal isOpen={showColorModal} onClose={() => setShowColorModal(false)} size="md">
+        <ModalBackdrop />
+        <ModalContent>
+          <ModalHeader>
+            <Heading size="md">Choose Accent Color</Heading>
+          </ModalHeader>
+          <ModalBody>
+            <VStack gap="$3" py="$2">
+              <HStack gap="$3" flexWrap="wrap" justifyContent="center">
+                {ACCENT_COLORS.map((color) => (
+                  <Pressable
+                    key={color.value}
+                    onPress={() => handleChangeColor(color.value)}
+                    disabled={isSaving}
+                  >
+                    <Box
+                      bg={color.value}
+                      width={48}
+                      height={48}
+                      borderRadius="$full"
+                      borderWidth={selectedColor === color.value ? 4 : 0}
+                      borderColor={text.primary}
+                      justifyContent="center"
+                      alignItems="center"
+                    >
+                      {selectedColor === color.value && (
+                        <MaterialIcons name="check" size={20} color="white" />
+                      )}
+                    </Box>
+                  </Pressable>
+                ))}
+              </HStack>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" action="secondary" onPress={() => setShowColorModal(false)}>
+              <ButtonText>Cancel</ButtonText>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Currency Selection Modal */}
       <Modal isOpen={showCurrencyModal} onClose={() => setShowCurrencyModal(false)} size="md">
         <ModalBackdrop />
         <ModalContent>
@@ -565,6 +833,45 @@ export default function Settings() {
         </ModalContent>
       </Modal>
 
+      {/* Delete Workspace Confirmation Modal */}
+      <Modal isOpen={showDeleteModal} size="md" avoidKeyboard>
+        <ModalBackdrop bg="rgba(0,0,0,0.5)" />
+        <ModalContent>
+          <ModalHeader>
+            <Heading size="md" color="$error600">Delete Workspace</Heading>
+          </ModalHeader>
+          <ModalBody>
+            <VStack gap="$4" py="$2">
+              <HStack alignItems="center" gap="$3" p="$3" bg="$error100" borderRadius="$md">
+                <MaterialIcons name="warning" size={24} color="$error700" />
+                <Text size="sm" color="$error700">
+                  This action cannot be undone. All workspace data will be permanently deleted.
+                </Text>
+              </HStack>
+              <Text size="md" color={text.primary}>
+                Are you sure you want to delete "{activeWorkspace}"?
+              </Text>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack gap="$3">
+              <Button variant="outline" action="secondary" onPress={() => setShowDeleteModal(false)}>
+                <ButtonText>Cancel</ButtonText>
+              </Button>
+              <Button 
+                variant="solid" 
+                action="negative"
+                onPress={handleDeleteWorkspace}
+                isDisabled={isSaving}
+              >
+                {isSaving ? <Spinner color="white" /> : <ButtonText>Delete</ButtonText>}
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Workspace Switching Modal */}
       <Modal isOpen={showSwitchingModal} size="md" avoidKeyboard>
         <ModalBackdrop bg="rgba(0,0,0,0.5)" />
         <ModalContent>
@@ -573,21 +880,19 @@ export default function Settings() {
           </ModalHeader>
           <ModalBody>
             <VStack gap="$4" alignItems="center" py="$4">
-              <Box animation="pulse" iterationCount="infinite">
-                <MaterialIcons name="sync" size={48} color={toggle.on} />
-              </Box>
+              <Spinner size="large" color={toggle.on} />
               <Text size="lg" fontWeight="$medium" color={text.primary} textAlign="center">
                 Switching to {workspaceOptions.find(w => w !== activeWorkspace) || activeWorkspace}...
               </Text>
               <Text size="sm" color={text.secondary} textAlign="center">
-                Give me a Minute. Let me crunch some numbers.
+                Give me a minute. Let me crunch some numbers.
               </Text>
               <Box width="100%" height={4} bg="$backgroundLight300" borderRadius="$full" overflow="hidden">
                 <Box
                   height="100%"
-                  width={progressWidth}
+                  style={{width:progressWidth}}
                   bg="$primary500"
-                  borderRadius="$full"
+                  $xs-borderRadius="$full"
                   transition="width 100ms linear"
                 />
               </Box>

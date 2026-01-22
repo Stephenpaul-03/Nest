@@ -139,6 +139,14 @@ export function ScheduleModal({ isOpen, onClose }: ScheduleModalProps) {
     onClose();
   };
 
+  // Handle delete
+  const handleDelete = () => {
+    if (editingItemId) {
+      dispatch(deleteItem(editingItemId));
+      onClose();
+    }
+  };
+
   const handleChange = (
     field: keyof ScheduleFormData,
     value: string | string[] | boolean | undefined
@@ -663,32 +671,49 @@ export function ScheduleModal({ isOpen, onClose }: ScheduleModalProps) {
           pt="$4"
           pb="$4"
         >
-          <HStack gap="$3" w="100%" justifyContent="flex-end">
-            <Button
-              variant="outline"
-              onPress={onClose}
-              borderColor={colors.border.primary}
-              borderRadius="$md"
-            >
-              <Text color={colors.text.secondary}>Cancel</Text>
-            </Button>
-            <Button
-              onPress={handleSubmit}
-              bg={colors.isDark ? '$primary500' : '$primary600'}
-              borderRadius="$md"
-              px="$6"
-            >
-              <HStack gap="$2" alignItems="center">
-                <MaterialCommunityIcons
-                  name={modalMode === 'add' ? 'plus' : 'check'}
-                  size={16}
-                  color="white"
-                />
-                <Text color="white" fontWeight="$semibold">
-                  {modalMode === 'add' ? 'Add Schedule' : 'Save Changes'}
-                </Text>
-              </HStack>
-            </Button>
+          <HStack gap="$3" w="100%" justifyContent="space-between" alignItems="center">
+            {modalMode === 'edit' ? (
+              <Button
+                variant="outline"
+                onPress={handleDelete}
+                borderColor="$error500"
+                borderRadius="$md"
+              >
+                <HStack gap="$2" alignItems="center">
+                  <MaterialCommunityIcons name="delete" size={16} color="#ef4444" />
+                  <Text color="$error500" fontWeight="$medium">Delete</Text>
+                </HStack>
+              </Button>
+            ) : (
+              <Box />
+            )}
+            <HStack gap="$3">
+              <Button
+                variant="outline"
+                onPress={onClose}
+                borderColor={colors.border.primary}
+                borderRadius="$md"
+              >
+                <Text color={colors.text.secondary}>Cancel</Text>
+              </Button>
+              <Button
+                onPress={handleSubmit}
+                bg={colors.isDark ? '$primary500' : '$primary600'}
+                borderRadius="$md"
+                px="$6"
+              >
+                <HStack gap="$2" alignItems="center">
+                  <MaterialCommunityIcons
+                    name={modalMode === 'add' ? 'plus' : 'check'}
+                    size={16}
+                    color="white"
+                  />
+                  <Text color="white" fontWeight="$semibold">
+                    {modalMode === 'add' ? 'Add Schedule' : 'Save Changes'}
+                  </Text>
+                </HStack>
+              </Button>
+            </HStack>
           </HStack>
         </ModalFooter>
       </ModalContent>

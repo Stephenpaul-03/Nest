@@ -3,7 +3,7 @@
  * Form for adding and editing medical inventory items
  */
 import { useThemedColors } from '@/constants/colors';
-import { addItem, selectEditingItemId, selectItemById, selectModalMode, updateItem } from '@/src/store/inventorySlice';
+import { addItem, deleteItem, selectEditingItemId, selectItemById, selectModalMode, updateItem } from '@/src/store/inventorySlice';
 import { DEFAULT_LOW_STOCK_THRESHOLD, DEFAULT_USERS, ITEM_UNITS, ItemFormData } from '@/src/types/inventory';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Box, Button, FormControl, FormControlHelperText, FormControlLabel, HStack, Input, InputField, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, Select, SelectBackdrop, SelectContent, SelectInput, SelectItem, SelectPortal, SelectTrigger, Text, VStack } from '@gluestack-ui/themed';
@@ -66,6 +66,14 @@ export function ItemModal({ isOpen, onClose }: ItemModalProps) {
     onClose();
   };
 
+  // Handle delete
+  const handleDelete = () => {
+    if (editingItemId) {
+      dispatch(deleteItem(editingItemId));
+      onClose();
+    }
+  };
+
   const handleChange = (field: keyof ItemFormData, value: string | number | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -91,6 +99,7 @@ export function ItemModal({ isOpen, onClose }: ItemModalProps) {
   };
 
   const isStrips = formData.unit === 'strips';
+  const isEditMode = modalMode === 'edit';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false} size="lg">
@@ -101,7 +110,7 @@ export function ItemModal({ isOpen, onClose }: ItemModalProps) {
             <Box bg={colors.isDark ? '#312e81' : '#eef2ff'} p="$2" borderRadius="$md">
               <MaterialCommunityIcons name="pill" size={20} color={colors.isDark ? '#818cf8' : '#4f46e5'} />
             </Box>
-            <Text size="xl" fontWeight="$bold" color={colors.text.primary}>{modalMode === 'add' ? 'Add Medication' : 'Edit Medication'}</Text>
+            <Text size="xl" fontWeight="$bold" color={colors.text.primary}>{!isEditMode ? 'Add Medication' : 'Edit Medication'}</Text>
           </HStack>
           <ModalCloseButton position="absolute" right="$3" top="$3"><MaterialCommunityIcons name="close" size={20} color={colors.text.muted} /></ModalCloseButton>
         </ModalHeader>
@@ -163,17 +172,35 @@ export function ItemModal({ isOpen, onClose }: ItemModalProps) {
           </VStack>
         </ModalBody>
         <ModalFooter borderTopWidth={1} borderColor={colors.border.primary} pt="$4" pb="$4">
-          <HStack gap="$3" w="100%" justifyContent="flex-end">
-            <Button variant="outline" onPress={onClose} borderColor={colors.border.primary} borderRadius="$md"><Text color={colors.text.secondary}>Cancel</Text></Button>
-            <Button onPress={handleSubmit} bg={colors.isDark ? '$primary500' : '$primary600'} borderRadius="$md" px="$6">
-              <HStack gap="$2" alignItems="center">
-                <MaterialCommunityIcons name={modalMode === 'add' ? 'plus' : 'check'} size={16} color="white" />
-                <Text color="white" fontWeight="$semibold">{modalMode === 'add' ? 'Add Medication' : 'Save Changes'}</Text>
-              </HStack>
-            </Button>
+          <HStack gap="$3" w="100%" justifyContent="space-between" alignItems="center">
+            {isEditMode ? (
+              <Button 
+                variant="outline" 
+                onPress={handleDelete}
+                borderColor="$error500"
+                borderRadius="$md"
+              >
+                <HStack gap="$2" alignItems="center">
+                  <MaterialCommunityIcons name="delete" size={16} color="#ef4444" />
+                  <Text color="$error500" fontWeight="$medium">Delete</Text>
+                </HStack>
+              </Button>
+            ) : (
+              <Box />
+            )}
+            <HStack gap="$3">
+              <Button variant="outline" onPress={onClose} borderColor={colors.border.primary} borderRadius="$md"><Text color={colors.text.secondary}>Cancel</Text></Button>
+              <Button onPress={handleSubmit} bg={colors.isDark ? '$primary500' : '$primary600'} borderRadius="$md" px="$6">
+                <HStack gap="$2" alignItems="center">
+                  <MaterialCommunityIcons name={!isEditMode ? 'plus' : 'check'} size={16} color="white" />
+                  <Text color="white" fontWeight="$semibold">{!isEditMode ? 'Add Medication' : 'Save Changes'}</Text>
+                </HStack>
+              </Button>
+            </HStack>
           </HStack>
         </ModalFooter>
       </ModalContent>
     </Modal>
   );
 }
+

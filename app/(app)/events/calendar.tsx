@@ -99,7 +99,7 @@ export default function Calendar() {
   const isMobile = width < 640;
   const isTablet = width >= 640 && width < 1024;
   
-  const handleAddEvent = () => dispatch(openAddModal());:
+  const handleAddEvent = () => dispatch(openAddModal());
   const handleCloseModal = () => dispatch(closeModal());
   
   // Mobile layout: Stack vertically

@@ -5,53 +5,54 @@
 
 import { useThemedColors } from '@/constants/colors';
 import {
-    addExpenseCategory,
-    addIncomeCategory,
-    addTransaction,
-    selectEditingTransactionId,
-    selectExpenseCategories,
-    selectIncomeCategories,
-    selectModalMode,
-    selectTransactionById,
-    updateTransaction,
+  addExpenseCategory,
+  addIncomeCategory,
+  addTransaction,
+  permanentDeleteTransaction,
+  selectEditingTransactionId,
+  selectExpenseCategories,
+  selectIncomeCategories,
+  selectModalMode,
+  selectTransactionById,
+  updateTransaction
 } from '@/src/store/transactionSlice';
 import {
-    DEFAULT_EXPENSE_CATEGORIES,
-    DEFAULT_INCOME_CATEGORIES,
-    PaymentMethod,
-    TransactionFormData,
-    TransactionType,
+  DEFAULT_EXPENSE_CATEGORIES,
+  DEFAULT_INCOME_CATEGORIES,
+  PaymentMethod,
+  TransactionFormData,
+  TransactionType,
 } from '@/src/types/transaction';
 import { getTodayDate, validateAmount } from '@/src/utils/transactionHelpers';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-    Box,
-    Button,
-    FormControl,
-    FormControlHelperText,
-    FormControlLabel,
-    HStack,
-    Input,
-    InputField,
-    Modal,
-    ModalBackdrop,
-    ModalBody,
-    ModalCloseButton,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    Pressable,
-    Select,
-    SelectBackdrop,
-    SelectContent,
-    SelectInput,
-    SelectItem,
-    SelectPortal,
-    SelectTrigger,
-    Text,
-    Textarea,
-    TextareaInput,
-    VStack,
+  Box,
+  Button,
+  FormControl,
+  FormControlHelperText,
+  FormControlLabel,
+  HStack,
+  Input,
+  InputField,
+  Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Pressable,
+  Select,
+  SelectBackdrop,
+  SelectContent,
+  SelectInput,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+  Text,
+  Textarea,
+  TextareaInput,
+  VStack,
 } from '@gluestack-ui/themed';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -235,7 +236,16 @@ export function TransactionModal({ isOpen, onClose, defaultType = 'expense' }: T
     }));
   };
   
+  // Handle delete
+  const handleDelete = () => {
+    if (editingTransactionId) {
+      dispatch(permanentDeleteTransaction(editingTransactionId));
+      onClose();
+    }
+  };
+  
   const isIncome = formData.type === 'income';
+  const isEditMode = modalMode === 'edit';
   const headerColor = isIncome ? (colors.isDark ? '#22c55e' : '#16a34a') : (colors.isDark ? '#ef4444' : '#dc2626');
   const headerBg = isIncome ? (colors.isDark ? '#14532d' : '#f0fdf4') : (colors.isDark ? '#7f1d1d' : '#fef2f2');
   
@@ -253,7 +263,7 @@ export function TransactionModal({ isOpen, onClose, defaultType = 'expense' }: T
               />
             </Box>
             <Text size="xl" fontWeight="$bold" color={colors.text.primary}>
-              {modalMode === 'add' ? (isIncome ? 'Add Income' : 'Add Expense') : 'Edit Transaction'}
+              {!isEditMode ? (isIncome ? 'Add Income' : 'Add Expense') : 'Edit Transaction'}
             </Text>
           </HStack>
           <ModalCloseButton position="absolute" right="$3" top="$3">
@@ -520,23 +530,40 @@ export function TransactionModal({ isOpen, onClose, defaultType = 'expense' }: T
         </ModalBody>
         
         <ModalFooter borderTopWidth={1} borderColor={colors.border.primary} pt="$4" pb="$4">
-          <HStack gap="$3" w="100%" justifyContent="flex-end">
-            <Button variant="outline" onPress={onClose} borderColor={colors.border.primary} borderRadius="$md">
-              <Text color={colors.text.secondary}>Cancel</Text>
-            </Button>
-            <Button 
-              onPress={handleSubmit} 
-              bg={isIncome ? (colors.isDark ? '$success500' : '$success600') : (colors.isDark ? '$error500' : '$error600')}
-              borderRadius="$md"
-              px="$6"
-            >
-              <HStack gap="$2" alignItems="center">
-                <MaterialCommunityIcons name={modalMode === 'add' ? 'plus' : 'check'} size={16} color="white" />
-                <Text color="white" fontWeight="$semibold">
-                  {modalMode === 'add' ? (isIncome ? 'Add Income' : 'Add Expense') : 'Save Changes'}
-                </Text>
-              </HStack>
-            </Button>
+          <HStack gap="$3" w="100%" justifyContent="space-between" alignItems="center">
+            {isEditMode ? (
+              <Button 
+                variant="outline" 
+                onPress={handleDelete}
+                borderColor="$error500"
+                borderRadius="$md"
+              >
+                <HStack gap="$2" alignItems="center">
+                  <MaterialCommunityIcons name="delete" size={16} color="#ef4444" />
+                  <Text color="$error500" fontWeight="$medium">Delete</Text>
+                </HStack>
+              </Button>
+            ) : (
+              <Box />
+            )}
+            <HStack gap="$3">
+              <Button variant="outline" onPress={onClose} borderColor={colors.border.primary} borderRadius="$md">
+                <Text color={colors.text.secondary}>Cancel</Text>
+              </Button>
+              <Button 
+                onPress={handleSubmit} 
+                bg={isIncome ? (colors.isDark ? '$success500' : '$success600') : (colors.isDark ? '$error500' : '$error600')}
+                borderRadius="$md"
+                px="$6"
+              >
+                <HStack gap="$2" alignItems="center">
+                  <MaterialCommunityIcons name={!isEditMode ? 'plus' : 'check'} size={16} color="white" />
+                  <Text color="white" fontWeight="$semibold">
+                    {!isEditMode ? (isIncome ? 'Add Income' : 'Add Expense') : 'Save Changes'}
+                  </Text>
+                </HStack>
+              </Button>
+            </HStack>
           </HStack>
         </ModalFooter>
       </ModalContent>

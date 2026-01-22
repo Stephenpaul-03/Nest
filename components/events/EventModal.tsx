@@ -5,46 +5,47 @@
 
 import { useThemedColors } from '@/constants/colors';
 import {
-    addEvent,
-    selectEditingEventId,
-    selectEventById,
-    selectEventModalMode,
-    updateEvent
+  addEvent,
+  deleteEvent,
+  selectEditingEventId,
+  selectEventById,
+  selectEventModalMode,
+  updateEvent
 } from '@/src/store/eventsSlice';
 import {
-    EventFormData,
-    RECURRENCE_OPTIONS
+  EventFormData,
+  RECURRENCE_OPTIONS
 } from '@/src/types/event';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-    Box,
-    Button,
-    FormControl,
-    FormControlHelperText,
-    FormControlLabel,
-    HStack,
-    Input,
-    InputField,
-    Modal,
-    ModalBackdrop,
-    ModalBody,
-    ModalCloseButton,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    Pressable,
-    Select,
-    SelectBackdrop,
-    SelectContent,
-    SelectInput,
-    SelectItem,
-    SelectPortal,
-    SelectTrigger,
-    Switch,
-    Text,
-    Textarea,
-    TextareaInput,
-    VStack
+  Box,
+  Button,
+  FormControl,
+  FormControlHelperText,
+  FormControlLabel,
+  HStack,
+  Input,
+  InputField,
+  Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Pressable,
+  Select,
+  SelectBackdrop,
+  SelectContent,
+  SelectInput,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+  Switch,
+  Text,
+  Textarea,
+  TextareaInput,
+  VStack
 } from '@gluestack-ui/themed';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -146,6 +147,14 @@ export function EventModal({ isOpen, onClose }: EventModalProps) {
       dispatch(addEvent(formData));
     }
     onClose();
+  };
+
+  // Handle delete
+  const handleDelete = () => {
+    if (editingEventId) {
+      dispatch(deleteEvent(editingEventId));
+      onClose();
+    }
   };
 
   const handleChange = <K extends keyof EventFormData>(
@@ -327,7 +336,6 @@ export function EventModal({ isOpen, onClose }: EventModalProps) {
                   borderRadius="$md"
                 >
                   <InputField
-                    type="date"
                     value={getDateFromISO(formData.startDateTime)}
                     onChangeText={(v: string) => handleDateChange('start', v)}
                     placeholder="YYYY-MM-DD"
@@ -361,7 +369,6 @@ export function EventModal({ isOpen, onClose }: EventModalProps) {
                     borderRadius="$md"
                   >
                     <InputField
-                      type="time"
                       value={getTimeFromISO(formData.startDateTime)}
                       onChangeText={(v: string) => handleTimeChange('start', v)}
                       placeholder="09:00"
@@ -396,7 +403,6 @@ export function EventModal({ isOpen, onClose }: EventModalProps) {
                     borderRadius="$md"
                   >
                     <InputField
-                      type="date"
                       value={formData.endDateTime ? getDateFromISO(formData.endDateTime) : ''}
                       onChangeText={(v: string) => handleDateChange('end', v)}
                       placeholder="YYYY-MM-DD"
@@ -431,7 +437,6 @@ export function EventModal({ isOpen, onClose }: EventModalProps) {
                     borderRadius="$md"
                   >
                     <InputField
-                      type="time"
                       value={formData.endDateTime ? getTimeFromISO(formData.endDateTime) : ''}
                       onChangeText={(v: string) => handleTimeChange('end', v)}
                       placeholder="10:00"
@@ -569,36 +574,53 @@ export function EventModal({ isOpen, onClose }: EventModalProps) {
           pt="$4"
           pb="$4"
         >
-          <HStack gap="$3" w="100%" justifyContent="flex-end">
-            <Button
-              variant="outline"
-              onPress={onClose}
-              borderColor={colors.border.primary}
-              borderRadius="$md"
-            >
-              <Text color={colors.text.secondary}>
-                {modalMode === 'view' ? 'Close' : 'Cancel'}
-              </Text>
-            </Button>
-            {modalMode !== 'view' && (
+          <HStack gap="$3" w="100%" justifyContent="space-between" alignItems="center">
+            {modalMode === 'edit' ? (
               <Button
-                onPress={handleSubmit}
-                bg={colors.isDark ? '$primary500' : '$primary600'}
+                variant="outline"
+                onPress={handleDelete}
+                borderColor="$error500"
                 borderRadius="$md"
-                px="$6"
               >
                 <HStack gap="$2" alignItems="center">
-                  <MaterialCommunityIcons
-                    name={modalMode === 'add' ? 'plus' : 'check'}
-                    size={16}
-                    color="white"
-                  />
-                  <Text color="white" fontWeight="$semibold">
-                    {modalMode === 'add' ? 'Add Event' : 'Save Changes'}
-                  </Text>
+                  <MaterialCommunityIcons name="delete" size={16} color="#ef4444" />
+                  <Text color="$error500" fontWeight="$medium">Delete</Text>
                 </HStack>
               </Button>
+            ) : (
+              <Box />
             )}
+            <HStack gap="$3">
+              <Button
+                variant="outline"
+                onPress={onClose}
+                borderColor={colors.border.primary}
+                borderRadius="$md"
+              >
+                <Text color={colors.text.secondary}>
+                  {modalMode === 'view' ? 'Close' : 'Cancel'}
+                </Text>
+              </Button>
+              {modalMode !== 'view' && (
+                <Button
+                  onPress={handleSubmit}
+                  bg={colors.isDark ? '$primary500' : '$primary600'}
+                  borderRadius="$md"
+                  px="$6"
+                >
+                  <HStack gap="$2" alignItems="center">
+                    <MaterialCommunityIcons
+                      name={modalMode === 'add' ? 'plus' : 'check'}
+                      size={16}
+                      color="white"
+                    />
+                    <Text color="white" fontWeight="$semibold">
+                      {modalMode === 'add' ? 'Add Event' : 'Save Changes'}
+                    </Text>
+                  </HStack>
+                </Button>
+              )}
+            </HStack>
           </HStack>
         </ModalFooter>
       </ModalContent>

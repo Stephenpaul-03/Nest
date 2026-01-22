@@ -23,25 +23,11 @@ export interface User {
   avatar?: string;
 }
 
-// Default tools for new workspaces
+// Default tools for new workspaces (will be used when creating workspaces)
 const defaultEnabledTools: EnabledTools = {
   finance: true,
   events: true,
   medicals: true,
-};
-
-// Default workspaces
-const defaultWorkspaces: Record<string, WorkspaceConfig> = {
-  'Personal': {
-    name: 'Personal',
-    enabledTools: { ...defaultEnabledTools },
-    currencySymbol: '$',
-  },
-  'Family': {
-    name: 'Family',
-    enabledTools: { ...defaultEnabledTools },
-    currencySymbol: '$',
-  },
 };
 
 interface AuthState {
@@ -56,12 +42,13 @@ interface AuthState {
   idToken: string | null;
 }
 
+// Initial state: completely empty - no workspaces, no users
 const initialState: AuthState = {
   isAuthenticated: false,
   currentUserId: null,
   users: {},
-  activeWorkspace: 'Personal',
-  workspaces: { ...defaultWorkspaces },
+  activeWorkspace: '',
+  workspaces: {},
   globalCurrencySymbol: '$',
   user: null,
   idToken: null,
@@ -94,13 +81,10 @@ const authSlice = createSlice({
       if (state.users[userId]) {
         state.currentUserId = userId;
         state.user = state.users[userId];
-        // Reset workspace to Personal for the new user
-        state.activeWorkspace = 'Personal';
-        // Reset workspaces to defaults
-        state.workspaces = {
-          'Personal': { name: 'Personal', enabledTools: { ...defaultEnabledTools }, currencySymbol: '$' },
-          'Family': { name: 'Family', enabledTools: { ...defaultEnabledTools }, currencySymbol: '$' },
-        };
+        // Reset workspace to empty for the new user
+        state.activeWorkspace = '';
+        // Reset workspaces to empty
+        state.workspaces = {};
         state.globalCurrencySymbol = '$';
       }
     },
@@ -109,15 +93,37 @@ const authSlice = createSlice({
       state.currentUserId = null;
       state.user = null;
       state.idToken = null;
-      state.activeWorkspace = 'Personal';
-      state.workspaces = {
-        'Personal': { name: 'Personal', enabledTools: { ...defaultEnabledTools }, currencySymbol: '$' },
-        'Family': { name: 'Family', enabledTools: { ...defaultEnabledTools }, currencySymbol: '$' },
-      };
+      state.activeWorkspace = '';
+      state.workspaces = {};
       state.globalCurrencySymbol = '$';
     },
     setActiveWorkspace(state, action: PayloadAction<string>) {
       state.activeWorkspace = action.payload;
+    },
+    createWorkspace(state, action: PayloadAction<string>) {
+      const name = action.payload;
+      state.workspaces[name] = {
+        name,
+        enabledTools: { ...defaultEnabledTools },
+        currencySymbol: '$',
+      };
+      state.activeWorkspace = name;
+    },
+    deleteWorkspace(state, action: PayloadAction<string>) {
+      const name = action.payload;
+      delete state.workspaces[name];
+      if (state.activeWorkspace === name) {
+        state.activeWorkspace = '';
+      }
+    },
+    deleteUser(state, action: PayloadAction<string>) {
+      const userId = action.payload;
+      delete state.users[userId];
+      if (state.currentUserId === userId) {
+        state.currentUserId = null;
+        state.user = null;
+        state.isAuthenticated = false;
+      }
     },
     toggleTool(state, action: PayloadAction<{ workspace: string; tool: ToolKey }>) {
       const { workspace, tool } = action.payload;
@@ -179,6 +185,20 @@ const authSlice = createSlice({
       state.idToken = 'mock-token';
       state.isAuthenticated = true;
     },
+    /**
+     * Clear all workspaces and accounts
+     * Use this for a complete reset
+     */
+    clearAllData(state) {
+      state.isAuthenticated = false;
+      state.currentUserId = null;
+      state.users = {};
+      state.activeWorkspace = '';
+      state.workspaces = {};
+      state.globalCurrencySymbol = '$';
+      state.user = null;
+      state.idToken = null;
+    },
   },
 });
 
@@ -192,16 +212,29 @@ export const selectAllUsers = (state: { auth: AuthState }) => {
   return Object.values(state.auth.users);
 };
 
+export const selectAllWorkspaces = (state: { auth: AuthState }) => {
+  return Object.values(state.auth.workspaces);
+};
+
+export const selectActiveWorkspaceConfig = (state: { auth: AuthState }) => {
+  const { activeWorkspace, workspaces } = state.auth;
+  return activeWorkspace ? workspaces[activeWorkspace] : null;
+};
+
 export const { 
   login, 
   addMockUser,
   switchAccount,
   logout, 
-  setActiveWorkspace, 
+  setActiveWorkspace,
+  createWorkspace,
+  deleteWorkspace,
+  deleteUser,
   toggleTool, 
   setWorkspaceCurrencySymbol, 
   setGlobalCurrencySymbol,
-  hydrateFromConfig 
+  hydrateFromConfig,
+  clearAllData
 } = authSlice.actions;
 
 // Add user and idToken to state for backward compatibility
@@ -219,12 +252,20 @@ authSlice.caseReducers.logout = (state) => {
   state.currentUserId = null;
   state.user = null;
   state.idToken = null;
-  state.activeWorkspace = 'Personal';
-  state.workspaces = {
-    'Personal': { name: 'Personal', enabledTools: { ...defaultEnabledTools }, currencySymbol: '$' },
-    'Family': { name: 'Family', enabledTools: { ...defaultEnabledTools }, currencySymbol: '$' },
-  };
+  state.activeWorkspace = '';
+  state.workspaces = {};
   state.globalCurrencySymbol = '$';
+};
+
+authSlice.caseReducers.clearAllData = (state) => {
+  state.isAuthenticated = false;
+  state.currentUserId = null;
+  state.users = {};
+  state.activeWorkspace = '';
+  state.workspaces = {};
+  state.globalCurrencySymbol = '$';
+  state.user = null;
+  state.idToken = null;
 };
 
 export default authSlice.reducer;

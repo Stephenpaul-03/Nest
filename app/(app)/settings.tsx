@@ -1,9 +1,12 @@
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useThemedColors } from '@/constants/colors';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeContext } from '@/src/context/ThemeContext';
 import { RootState } from '@/src/store';
 import {
   addMockUser,
+  clearAllData,
+  createWorkspace,
   hydrateFromConfig,
   logout,
   selectAllUsers,
@@ -14,6 +17,22 @@ import {
   ToolKey,
   User
 } from '@/src/store/authSlice';
+import {
+  clearEvents,
+  loadEvents as loadEventsAction
+} from '@/src/store/eventsSlice';
+import {
+  clearItems,
+  loadItems as loadItemsAction
+} from '@/src/store/inventorySlice';
+import {
+  clearItems as clearScheduleItems,
+  loadItems as loadScheduleItemsAction
+} from '@/src/store/scheduleSlice';
+import {
+  clearAllTransactions,
+  loadTransactions as loadTransactionsAction
+} from '@/src/store/transactionSlice';
 import { updateConfig } from '@/src/workspace/config/loadConfig';
 import { DEFAULT_ACCENT_COLOR } from '@/src/workspace/config/types';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -44,6 +63,7 @@ import {
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import mockData from './mock.json';
 
 // Mock users for adding new accounts
 const MOCK_USERS: User[] = [
@@ -129,13 +149,15 @@ export default function Settings() {
   const [localTools, setLocalTools] = useState(currentWorkspaceTools);
   
   const { colorMode } = useThemeContext();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const {
     background,
     text,
     border,
     icon,
-    toggle
+    toggle,
   } = useThemedColors();
 
   const handleLogout = () => {
@@ -522,6 +544,75 @@ export default function Settings() {
               >
                 <ButtonText>Delete Workspace</ButtonText>
               </Button>
+            </Box>
+
+            {/* Dev Tools Section - For Development Only */}
+            <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor="$warning500">
+              <HStack alignItems="center" gap="$2" mb="$3">
+                <MaterialIcons name="code" size={18} color="$warning600" />
+                <Text size="sm" fontWeight="$semibold" color="$warning600" textTransform="uppercase">
+                  Dev Tools
+                </Text>
+              </HStack>
+              <Text size="sm" color={text.secondary} mb="$4">
+                Development-only tools to populate or clear mock data.
+              </Text>
+              
+              <VStack gap="$3">
+                {/* Populate with Mock Data Button */}
+                <Button
+                  variant="solid"
+                  onPress={() => {
+                    // Create Personal workspace if doesn't exist
+                    dispatch(createWorkspace('Personal'));
+                    dispatch(setActiveWorkspace('Personal'));
+                    
+                    // Load mock transactions from JSON
+                    dispatch(loadTransactionsAction(mockData.transactions));
+                    
+                    // Load mock inventory from JSON
+                    dispatch(loadItemsAction(mockData.inventory));
+                    
+                    // Load mock schedule from JSON
+                    dispatch(loadScheduleItemsAction(mockData.schedule));
+                    
+                    // Load mock events from JSON
+                    dispatch(loadEventsAction(mockData.events));
+                    
+                    // Reload page to refresh UI
+                    router.replace('/(app)/dashboard');
+                  }}
+                  bg={isDark ? '$success500' : '$success600'}
+                >
+                  <HStack gap="$2" alignItems="center">
+                    <MaterialIcons name="add-circle" size={18} color="white" />
+                    <ButtonText color="white">Populate Mock Data</ButtonText>
+                  </HStack>
+                </Button>
+                
+                {/* Clear All Data Button */}
+                <Button
+                  variant="outline"
+                  action="negative"
+                  onPress={() => {
+                    // Clear all data from all stores
+                    dispatch(clearAllTransactions());
+                    dispatch(clearItems());
+                    dispatch(clearScheduleItems());
+                    dispatch(clearEvents());
+                    dispatch(clearAllData());
+                    
+                    // Reload page to refresh UI
+                    router.replace('/(app)/dashboard');
+                  }}
+                  borderColor="$error500"
+                >
+                  <HStack gap="$2" alignItems="center">
+                    <MaterialIcons name="delete-forever" size={18} color="#ef4444" />
+                    <ButtonText color="$error500">Clear All Data</ButtonText>
+                  </HStack>
+                </Button>
+              </VStack>
             </Box>
 
             {/* Appearance Section */}

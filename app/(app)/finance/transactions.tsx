@@ -11,9 +11,11 @@ import { FiltersModal } from '@/components/transactions/FiltersModal';
 import { TransactionModal } from '@/components/transactions/TransactionModal';
 import { TransactionRow } from '@/components/transactions/TransactionRow';
 import { useThemedColors } from '@/constants/colors';
+import sampleTransactionsData from '@/src/data/sampleTransactions.json';
 import { RootState } from '@/src/store';
 import {
   duplicateLastTransaction,
+  importTransactions,
   openAddModal,
   openCategoryModal,
   openEditModal,
@@ -31,7 +33,7 @@ import {
   selectModalMode,
   selectTransactionById,
   setFilters,
-  softDeleteTransaction,
+  softDeleteTransaction
 } from '@/src/store/transactionSlice';
 import { Transaction, TransactionFilters, TransactionType } from '@/src/types/transaction';
 import {
@@ -97,6 +99,14 @@ export default function Transactions() {
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Check if we have any transactions
+  const hasTransactions = incomeTransactions.length > 0 || expenseTransactions.length > 0;
+  
+  // Handle loading sample data
+  const handleLoadSampleData = () => {
+    dispatch(importTransactions(sampleTransactionsData as any));
+  };
   
   // Get all unique tags for filter modal
   const allTags = useMemo(() => {
@@ -844,6 +854,23 @@ export default function Transactions() {
             Source of truth for all financial data
           </Text>
         </VStack>
+        
+        {/* Load Sample Data Button (shown when no transactions) */}
+        {!hasTransactions && (
+          <Button
+            onPress={handleLoadSampleData}
+            bg={colors.isDark ? '$primary500' : '$primary600'}
+            borderRadius="$md"
+            px="$4"
+          >
+            <HStack gap="$1.5" alignItems="center">
+              <MaterialCommunityIcons name="database-import" size={16} color="white" />
+              <Text color="white" fontWeight="$medium" size="sm">
+                Load Sample Data
+              </Text>
+            </HStack>
+          </Button>
+        )}
       </HStack>
       
       {/* Content */}

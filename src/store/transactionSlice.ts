@@ -202,6 +202,35 @@ const transactionSlice = createSlice({
       state.transactions = [];
     },
 
+    // Import transactions from JSON/Excel format
+    importTransactions: (state, action: PayloadAction<Partial<Transaction>[]>) => {
+      const importedTransactions = action.payload.filter(t => 
+        t.date && 
+        t.amount !== undefined && 
+        t.type && 
+        t.category && 
+        t.account
+      );
+
+      const now = new Date().toISOString();
+      const newTransactions: Transaction[] = importedTransactions.map(t => ({
+        id: t.id || `import-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        date: t.date!,
+        amount: t.amount!,
+        type: t.type!,
+        category: t.category!,
+        account: t.account!,
+        notes: t.notes,
+        tags: t.tags,
+        createdBy: t.createdBy || 'Imported',
+        createdAt: t.createdAt || now,
+        updatedAt: now,
+        deleted: t.deleted || false,
+      }));
+
+      state.transactions = [...state.transactions, ...newTransactions];
+    },
+
     // Set transaction type for new transaction (used by quick tools)
     setNewTransactionType: (state, action: PayloadAction<TransactionType>) => {
       // This is stored temporarily for the modal to know what type to add
@@ -230,6 +259,7 @@ export const {
   repeatLastTransaction,
   loadTransactions,
   clearAllTransactions,
+  importTransactions,
   setNewTransactionType,
 } = transactionSlice.actions;
 

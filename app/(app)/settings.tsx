@@ -2,9 +2,22 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useThemedColors } from '@/constants/colors';
 import { useThemeContext } from '@/src/context/ThemeContext';
 import { RootState } from '@/src/store';
-import { logout, setActiveWorkspace, setWorkspaceCurrencySymbol, toggleTool, ToolKey } from '@/src/store/authSlice';
+import {
+  addMockUser,
+  logout,
+  selectAllUsers, selectCurrentUser,
+  setActiveWorkspace,
+  setWorkspaceCurrencySymbol,
+  switchAccount,
+  toggleTool,
+  ToolKey,
+  User
+} from '@/src/store/authSlice';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
+  Avatar,
+  AvatarFallbackText,
+  AvatarImage,
   Box,
   Button,
   ButtonText,
@@ -24,6 +37,28 @@ import {
 } from '@gluestack-ui/themed';
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+
+// Mock users for adding new accounts
+const MOCK_USERS: User[] = [
+  {
+    id: 'user-1',
+    name: 'Alice Johnson',
+    email: 'alice.johnson@gmail.com',
+    avatar: 'https://ui-avatars.com/api/?name=Alice+Johnson&background=6366f1&color=fff',
+  },
+  {
+    id: 'user-2',
+    name: 'Bob Smith',
+    email: 'bob.smith@gmail.com',
+    avatar: 'https://ui-avatars.com/api/?name=Bob+Smith&background=10b981&color=fff',
+  },
+  {
+    id: 'user-3',
+    name: 'Carol Williams',
+    email: 'carol.williams@gmail.com',
+    avatar: 'https://ui-avatars.com/api/?name=Carol+Williams&background=f59e0b&color=fff',
+  },
+];
 
 const CURRENCY_OPTIONS = [
   { symbol: '$', name: 'US Dollar', code: 'USD' },
@@ -58,15 +93,18 @@ export default function Settings() {
     medicals: true,
   };
   const currentCurrencySymbol = workspaces[activeWorkspace]?.currencySymbol || '$';
+  const currentUser = useSelector((state: RootState) => selectCurrentUser(state));
+  const rememberedUsers = useSelector((state: RootState) => selectAllUsers(state));
   
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
   const [showSwitchingModal, setShowSwitchingModal] = useState(false);
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showAddAccountModal, setShowAddAccountModal] = useState(false);
   const [switchingProgress, setSwitchingProgress] = useState(0);
   const { colorMode } = useThemeContext();
 
   const {
-    isDark,
     background,
     text,
     border,
@@ -107,6 +145,39 @@ export default function Settings() {
     }, interval);
   };
 
+  const handleAccountSwitch = (userId: string) => {
+    setShowAccountModal(false);
+    dispatch(switchAccount(userId));
+    import('expo-router').then(({ router }) => {
+      router.replace('/(app)/dashboard');
+    });
+  };
+
+  const handleAddNewAccount = () => {
+    setShowAddAccountModal(false);
+    
+    // Find a user that's not already in the list
+    const existingIds = new Set(rememberedUsers.map(u => u.id));
+    const availableUser = MOCK_USERS.find(u => !existingIds.has(u.id));
+    
+    if (availableUser) {
+      dispatch(addMockUser(availableUser));
+    } else {
+      // All mock users are used, create a new one
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        name: `User ${rememberedUsers.length + 1}`,
+        email: `user${rememberedUsers.length + 1}@example.com`,
+        avatar: `https://ui-avatars.com/api/?name=User+${rememberedUsers.length + 1}&background=random&color=fff`,
+      };
+      dispatch(addMockUser(newUser));
+    }
+    
+    import('expo-router').then(({ router }) => {
+      router.replace('/(app)/dashboard');
+    });
+  };
+
   const handleToolToggle = (tool: ToolKey) => {
     dispatch(toggleTool({ workspace: activeWorkspace, tool }));
   };
@@ -141,6 +212,54 @@ export default function Settings() {
             <Heading size="2xl" color={text.primary} textAlign="center">
               Settings
             </Heading>
+
+            {/* Account Section */}
+            <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor={border.primary}>
+              <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase" mb="$3">
+                Account
+              </Text>
+              
+              {currentUser ? (
+                <HStack alignItems="center" gap="$3" mb="$4">
+                  <Avatar size="lg" borderRadius="$full">
+                    <AvatarFallbackText>{currentUser.name}</AvatarFallbackText>
+                    {currentUser.avatar && <AvatarImage source={{ uri: currentUser.avatar }} />}
+                  </Avatar>
+                  <VStack flex={1}>
+                    <Text size="lg" fontWeight="$medium" color={text.primary}>
+                      {currentUser.name}
+                    </Text>
+                    <Text size="sm" color={text.secondary}>
+                      {currentUser.email}
+                    </Text>
+                  </VStack>
+                </HStack>
+              ) : null}
+              
+              <VStack gap="$2">
+                <Button
+                  variant="outline"
+                  action="secondary"
+                  onPress={() => setShowAccountModal(true)}
+                >
+                  <MaterialIcons name="swap-horiz" size={20} color={text.primary} />
+                  <ButtonText ml="$2" color={text.primary}>Switch account</ButtonText>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  action="secondary"
+                  onPress={() => setShowAddAccountModal(true)}
+                >
+                  <MaterialIcons name="person-add" size={20} color={text.primary} />
+                  <ButtonText ml="$2" color={text.primary}>Add another account</ButtonText>
+                </Button>
+                
+                <Button variant="solid" action="negative" onPress={handleLogout}>
+                  <ButtonText>Log out</ButtonText>
+                </Button>
+              </VStack>
+            </Box>
 
             <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor={border.primary}>
               <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase" mb="$3">
@@ -238,18 +357,113 @@ export default function Settings() {
                 <ThemeToggle />
               </Box>
             </Box>
-
-            <Box bg={background.card} p="$4" borderRadius="$lg" borderWidth={1} borderColor={border.primary}>
-              <Text size="sm" fontWeight="$semibold" color={text.secondary} textTransform="uppercase" mb="$3">
-                Account
-              </Text>
-              <Button variant="solid" action="negative" onPress={handleLogout}>
-                <ButtonText>Log out</ButtonText>
-              </Button>
-            </Box>
           </VStack>
         </VStack>
       </ScrollView>
+
+      {/* Account Selection Modal */}
+      <Modal isOpen={showAccountModal} onClose={() => setShowAccountModal(false)} size="md">
+        <ModalBackdrop />
+        <ModalContent>
+          <ModalHeader>
+            <Heading size="md">Switch Account</Heading>
+          </ModalHeader>
+          <ModalBody>
+            <VStack gap="$2" mt="$2">
+              {rememberedUsers.map((user) => (
+                <Pressable
+                  key={user.id}
+                  py="$3"
+                  px="$4"
+                  $hover={{ bg: background.hover }}
+                  borderColor={border.primary}
+                  borderWidth={currentUser?.id === user.id ? '$2' : '$0'}
+                  borderRadius="$lg"
+                  onPress={() => handleAccountSwitch(user.id)}
+                >
+                  <HStack alignItems="center" gap="$3">
+                    <Avatar size="sm" borderRadius="$full">
+                      <AvatarFallbackText>{user.name}</AvatarFallbackText>
+                      {user.avatar && <AvatarImage source={{ uri: user.avatar }} />}
+                    </Avatar>
+                    <VStack flex={1}>
+                      <Text
+                        size="md"
+                        fontWeight={currentUser?.id === user.id ? '$bold' : '$normal'}
+                        color={text.primary}
+                      >
+                        {user.name}
+                      </Text>
+                      <Text size="xs" color={text.secondary}>
+                        {user.email}
+                      </Text>
+                    </VStack>
+                    {currentUser?.id === user.id && (
+                      <MaterialIcons name="check" size={20} color={toggle.on} />
+                    )}
+                  </HStack>
+                </Pressable>
+              ))}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" action="secondary" onPress={() => setShowAccountModal(false)}>
+              <ButtonText>Cancel</ButtonText>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Add Account Modal */}
+      <Modal isOpen={showAddAccountModal} onClose={() => setShowAddAccountModal(false)} size="md">
+        <ModalBackdrop />
+        <ModalContent>
+          <ModalHeader>
+            <Heading size="md">Add Account</Heading>
+          </ModalHeader>
+          <ModalBody>
+            <VStack gap="$4" py="$2">
+              <Text size="md" color={text.primary}>
+                Select a mock account to add:
+              </Text>
+              <VStack gap="$2">
+                {MOCK_USERS.filter(u => !rememberedUsers.find(ru => ru.id === u.id)).map((user) => (
+                  <Pressable
+                    key={user.id}
+                    py="$3"
+                    px="$4"
+                    $hover={{ bg: background.hover }}
+                    borderColor={border.primary}
+                    borderWidth={1}
+                    borderRadius="$lg"
+                    onPress={() => handleAddNewAccount()}
+                  >
+                    <HStack alignItems="center" gap="$3">
+                      <Avatar size="sm" borderRadius="$full">
+                        <AvatarFallbackText>{user.name}</AvatarFallbackText>
+                        {user.avatar && <AvatarImage source={{ uri: user.avatar }} />}
+                      </Avatar>
+                      <VStack>
+                        <Text size="md" fontWeight="$medium" color={text.primary}>
+                          {user.name}
+                        </Text>
+                        <Text size="xs" color={text.secondary}>
+                          {user.email}
+                        </Text>
+                      </VStack>
+                    </HStack>
+                  </Pressable>
+                ))}
+              </VStack>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" action="secondary" onPress={() => setShowAddAccountModal(false)}>
+              <ButtonText>Cancel</ButtonText>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <Modal isOpen={showWorkspaceModal} onClose={() => setShowWorkspaceModal(false)} size="md">
         <ModalBackdrop />

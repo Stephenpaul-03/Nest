@@ -136,12 +136,12 @@ export default function Transactions() {
   // Check if any filters are active
   const hasActiveFilters = useMemo(() => {
     return (
-      currentFilters.category !== 'all' ||
-      currentFilters.account !== 'all' ||
-      (currentFilters.date?.start || currentFilters.date?.end) ||
+      (currentFilters.category !== 'all' && currentFilters.category !== undefined) ||
+      (currentFilters.account !== 'all' && currentFilters.account !== undefined) ||
+      (currentFilters.date?.start !== undefined || currentFilters.date?.end !== undefined) ||
       (currentFilters.tags && currentFilters.tags.length > 0) ||
-      !!currentFilters.search
-    );
+      (currentFilters.search !== undefined && currentFilters.search !== '')
+    ) as boolean;
   }, [currentFilters]);
   
   // Quick tool handlers
@@ -242,173 +242,364 @@ export default function Transactions() {
             transaction={transaction}
             onEdit={() => handleEdit(transaction.id)}
             onDelete={() => handleDelete(transaction.id)}
+            isMobile={isMobile}
           />
         ))}
       </VStack>
     );
   };
   
-  // Render Quick Tools section
-  const renderQuickTools = () => (
-    <Box
-      bg={colors.background.card}
-      borderRadius="$lg"
-      borderWidth={1}
-      borderColor={colors.border.primary}
-      p="$4"
-      mb="$4"
-    >
-      <Text size="sm" fontWeight="$semibold" color={colors.text.secondary} mb="$3">
-        Quick Tools
-      </Text>
-      
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <HStack gap="$2" flexWrap="wrap">
-          {/* Add Income */}
-          <Button
-            onPress={handleAddIncome}
-            bg={colors.isDark ? '#14532d' : '#f0fdf4'}
-            borderColor={colors.isDark ? '#22c55e' : '#16a34a'}
-            borderWidth={1}
-            borderRadius="$md"
-            px="$4"
-          >
-            <HStack gap="$1.5" alignItems="center">
-              <MaterialCommunityIcons name="trending-up" size={16} color="#22c55e" />
-              <Text color={colors.isDark ? '#4ade80' : '#16a34a'} fontWeight="$medium" size="sm">
-                Add Income
-              </Text>
-            </HStack>
-          </Button>
+  // Render Quick Tools section - Mobile optimized
+  const renderQuickTools = () => {
+    // Mobile: Compact action bar with primary actions only
+    if (isMobile) {
+      return (
+        <Box mb="$3">
+          {/* Primary Actions - Large touch targets */}
+          <HStack gap="$3" mb="$3">
+            <Pressable
+              onPress={handleAddIncome}
+              flex={1}
+              py="$3"
+              bg={colors.isDark ? '#14532d' : '#f0fdf4'}
+              borderWidth={1}
+              borderColor={colors.isDark ? '#22c55e' : '#16a34a'}
+              borderRadius="$lg"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <HStack gap="$2" alignItems="center">
+                <MaterialCommunityIcons name="trending-up" size={20} color="#22c55e" />
+                <Text color={colors.isDark ? '#4ade80' : '#16a34a'} fontWeight="$semibold" size="sm">
+                  Add Income
+                </Text>
+              </HStack>
+            </Pressable>
+            
+            <Pressable
+              onPress={handleAddExpense}
+              flex={1}
+              py="$3"
+              bg={colors.isDark ? '#450a0a' : '#fef2f2'}
+              borderWidth={1}
+              borderColor={colors.isDark ? '#ef4444' : '#dc2626'}
+              borderRadius="$lg"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <HStack gap="$2" alignItems="center">
+                <MaterialCommunityIcons name="trending-down" size={20} color="#ef4444" />
+                <Text color={colors.isDark ? '#f87171' : '#dc2626'} fontWeight="$semibold" size="sm">
+                  Add Expense
+                </Text>
+              </HStack>
+            </Pressable>
+          </HStack>
           
-          {/* Add Expense */}
-          <Button
-            onPress={handleAddExpense}
-            bg={colors.isDark ? '#450a0a' : '#fef2f2'}
-            borderColor={colors.isDark ? '#ef4444' : '#dc2626'}
-            borderWidth={1}
-            borderRadius="$md"
-            px="$4"
-          >
-            <HStack gap="$1.5" alignItems="center">
-              <MaterialCommunityIcons name="trending-down" size={16} color="#ef4444" />
-              <Text color={colors.isDark ? '#f87171' : '#dc2626'} fontWeight="$medium" size="sm">
-                Add Expense
-              </Text>
-            </HStack>
-          </Button>
-          
-          {/* Add Category */}
-          <Button
-            onPress={() => handleAddCategory('expense')}
-            variant="outline"
-            borderColor={colors.border.primary}
-            borderRadius="$md"
-            px="$4"
-          >
-            <HStack gap="$1.5" alignItems="center">
-              <MaterialCommunityIcons name="tag-plus-outline" size={16} color={colors.text.secondary} />
-              <Text color={colors.text.secondary} size="sm">Add Category</Text>
-            </HStack>
-          </Button>
-          
-          {/* Duplicate Last Income */}
-          <Button
-            onPress={() => handleDuplicateLast('income')}
-            variant="outline"
-            borderColor={colors.border.primary}
-            borderRadius="$md"
-            px="$4"
-          >
-            <HStack gap="$1.5" alignItems="center">
-              <MaterialCommunityIcons name="content-copy" size={16} color={colors.text.secondary} />
-              <Text color={colors.text.secondary} size="sm">Dup. Last Inc</Text>
-            </HStack>
-          </Button>
-          
-          {/* Repeat Last Income */}
-          <Button
-            onPress={() => handleRepeatLast('income')}
-            variant="outline"
-            borderColor={colors.border.primary}
-            borderRadius="$md"
-            px="$4"
-          >
-            <HStack gap="$1.5" alignItems="center">
-              <MaterialCommunityIcons name="repeat" size={16} color={colors.text.secondary} />
-              <Text color={colors.text.secondary} size="sm">Repeat Inc</Text>
-            </HStack>
-          </Button>
-          
-          {/* Duplicate Last Expense */}
-          <Button
-            onPress={() => handleDuplicateLast('expense')}
-            variant="outline"
-            borderColor={colors.border.primary}
-            borderRadius="$md"
-            px="$4"
-          >
-            <HStack gap="$1.5" alignItems="center">
-              <MaterialCommunityIcons name="content-copy" size={16} color={colors.text.secondary} />
-              <Text color={colors.text.secondary} size="sm">Dup. Last Exp</Text>
-            </HStack>
-          </Button>
-          
-          {/* Repeat Last Expense */}
-          <Button
-            onPress={() => handleRepeatLast('expense')}
-            variant="outline"
-            borderColor={colors.border.primary}
-            borderRadius="$md"
-            px="$4"
-          >
-            <HStack gap="$1.5" alignItems="center">
-              <MaterialCommunityIcons name="repeat" size={16} color={colors.text.secondary} />
-              <Text color={colors.text.secondary} size="sm">Repeat Exp</Text>
-            </HStack>
-          </Button>
-          
-          {/* Jump to History */}
-          <Button
-            onPress={() => router.push('/finance/history')}
-            variant="outline"
-            borderColor={colors.border.primary}
-            borderRadius="$md"
-            px="$4"
-          >
-            <HStack gap="$1.5" alignItems="center">
-              <MaterialCommunityIcons name="history" size={16} color={colors.text.secondary} />
-              <Text color={colors.text.secondary} size="sm">History</Text>
-            </HStack>
-          </Button>
-          
-          {/* Filters */}
-          <Button
-            onPress={() => setIsFiltersModalOpen(true)}
-            variant="outline"
-            borderColor={hasActiveFilters ? (colors.isDark ? '$primary400' : '$primary500') : colors.border.primary}
-            borderWidth={hasActiveFilters ? 2 : 1}
-            borderRadius="$md"
-            px="$4"
-          >
-            <HStack gap="$1.5" alignItems="center">
-              <MaterialCommunityIcons
-                name={hasActiveFilters ? 'filter-variant' : 'filter-outline'}
-                size={16}
-                color={hasActiveFilters ? (colors.isDark ? '#818cf8' : '#4f46e5') : colors.text.secondary}
+          {/* Secondary Actions - Collapsible */}
+          <CollapsibleFiltersSection
+            filtersOpen={isFiltersModalOpen}
+            onToggleFilters={() => setIsFiltersModalOpen(true)}
+            hasActiveFilters={hasActiveFilters}
+            filterCount={Object.values(currentFilters).filter(v => v !== 'all' && v !== undefined && v !== '' && v !== '').length}
+            onNavigateToHistory={() => router.push('/finance/history')}
+          />
+        </Box>
+      );
+    }
+    
+    // Desktop: Original horizontal scroll
+    return (
+      <Box
+        bg={colors.background.card}
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor={colors.border.primary}
+        p="$4"
+        mb="$4"
+      >
+        <Text size="sm" fontWeight="$semibold" color={colors.text.secondary} mb="$3">
+          Quick Tools
+        </Text>
+        
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <HStack gap="$2" flexWrap="wrap">
+            {/* Add Income */}
+            <Button
+              onPress={handleAddIncome}
+              bg={colors.isDark ? '#14532d' : '#f0fdf4'}
+              borderColor={colors.isDark ? '#22c55e' : '#16a34a'}
+              borderWidth={1}
+              borderRadius="$md"
+              px="$4"
+            >
+              <HStack gap="$1.5" alignItems="center">
+                <MaterialCommunityIcons name="trending-up" size={16} color="#22c55e" />
+                <Text color={colors.isDark ? '#4ade80' : '#16a34a'} fontWeight="$medium" size="sm">
+                  Add Income
+                </Text>
+              </HStack>
+            </Button>
+            
+            {/* Add Expense */}
+            <Button
+              onPress={handleAddExpense}
+              bg={colors.isDark ? '#450a0a' : '#fef2f2'}
+              borderColor={colors.isDark ? '#ef4444' : '#dc2626'}
+              borderWidth={1}
+              borderRadius="$md"
+              px="$4"
+            >
+              <HStack gap="$1.5" alignItems="center">
+                <MaterialCommunityIcons name="trending-down" size={16} color="#ef4444" />
+                <Text color={colors.isDark ? '#f87171' : '#dc2626'} fontWeight="$medium" size="sm">
+                  Add Expense
+                </Text>
+              </HStack>
+            </Button>
+            
+            {/* Add Category */}
+            <Button
+              onPress={() => handleAddCategory('expense')}
+              variant="outline"
+              borderColor={colors.border.primary}
+              borderRadius="$md"
+              px="$4"
+            >
+              <HStack gap="$1.5" alignItems="center">
+                <MaterialCommunityIcons name="tag-plus-outline" size={16} color={colors.text.secondary} />
+                <Text color={colors.text.secondary} size="sm">Add Category</Text>
+              </HStack>
+            </Button>
+            
+            {/* Duplicate Last Income */}
+            <Button
+              onPress={() => handleDuplicateLast('income')}
+              variant="outline"
+              borderColor={colors.border.primary}
+              borderRadius="$md"
+              px="$4"
+            >
+              <HStack gap="$1.5" alignItems="center">
+                <MaterialCommunityIcons name="content-copy" size={16} color={colors.text.secondary} />
+                <Text color={colors.text.secondary} size="sm">Dup. Last Inc</Text>
+              </HStack>
+            </Button>
+            
+            {/* Repeat Last Income */}
+            <Button
+              onPress={() => handleRepeatLast('income')}
+              variant="outline"
+              borderColor={colors.border.primary}
+              borderRadius="$md"
+              px="$4"
+            >
+              <HStack gap="$1.5" alignItems="center">
+                <MaterialCommunityIcons name="repeat" size={16} color={colors.text.secondary} />
+                <Text color={colors.text.secondary} size="sm">Repeat Inc</Text>
+              </HStack>
+            </Button>
+            
+            {/* Duplicate Last Expense */}
+            <Button
+              onPress={() => handleDuplicateLast('expense')}
+              variant="outline"
+              borderColor={colors.border.primary}
+              borderRadius="$md"
+              px="$4"
+            >
+              <HStack gap="$1.5" alignItems="center">
+                <MaterialCommunityIcons name="content-copy" size={16} color={colors.text.secondary} />
+                <Text color={colors.text.secondary} size="sm">Dup. Last Exp</Text>
+              </HStack>
+            </Button>
+            
+            {/* Repeat Last Expense */}
+            <Button
+              onPress={() => handleRepeatLast('expense')}
+              variant="outline"
+              borderColor={colors.border.primary}
+              borderRadius="$md"
+              px="$4"
+            >
+              <HStack gap="$1.5" alignItems="center">
+                <MaterialCommunityIcons name="repeat" size={16} color={colors.text.secondary} />
+                <Text color={colors.text.secondary} size="sm">Repeat Exp</Text>
+              </HStack>
+            </Button>
+            
+            {/* Jump to History */}
+            <Button
+              onPress={() => router.push('/finance/history')}
+              variant="outline"
+              borderColor={colors.border.primary}
+              borderRadius="$md"
+              px="$4"
+            >
+              <HStack gap="$1.5" alignItems="center">
+                <MaterialCommunityIcons name="history" size={16} color={colors.text.secondary} />
+                <Text color={colors.text.secondary} size="sm">History</Text>
+              </HStack>
+            </Button>
+            
+            {/* Filters */}
+            <Button
+              onPress={() => setIsFiltersModalOpen(true)}
+              variant="outline"
+              borderColor={hasActiveFilters ? (colors.isDark ? '$primary400' : '$primary500') : colors.border.primary}
+              borderWidth={hasActiveFilters ? 2 : 1}
+              borderRadius="$md"
+              px="$4"
+            >
+              <HStack gap="$1.5" alignItems="center">
+                <MaterialCommunityIcons
+                  name={hasActiveFilters ? 'filter-variant' : 'filter-outline'}
+                  size={16}
+                  color={hasActiveFilters ? (colors.isDark ? '#818cf8' : '#4f46e5') : colors.text.secondary}
+                />
+                <Text
+                  color={hasActiveFilters ? (colors.isDark ? '#818cf8' : '#4f46e5') : colors.text.secondary}
+                  size="sm"
+                >
+                  Filters {hasActiveFilters ? `(${Object.values(currentFilters).filter(v => v !== 'all' && v !== undefined && v !== '').length})` : ''}
+                </Text>
+              </HStack>
+            </Button>
+          </HStack>
+        </ScrollView>
+      </Box>
+    );
+  };
+  
+  // Collapsible secondary actions section for mobile
+  const CollapsibleFiltersSection = ({ 
+    filtersOpen, 
+    onToggleFilters, 
+    hasActiveFilters, 
+    filterCount,
+    onNavigateToHistory 
+  }: { 
+    filtersOpen?: boolean; 
+    onToggleFilters: () => void;
+    hasActiveFilters: boolean;
+    filterCount: number;
+    onNavigateToHistory: () => void;
+  }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    return (
+      <Box>
+        {/* Collapsible toggle */}
+        <Pressable
+          onPress={() => setIsExpanded(!isExpanded)}
+          py="$2"
+        >
+          <HStack justifyContent="space-between" alignItems="center">
+            <HStack gap="$2" alignItems="center">
+              <MaterialCommunityIcons 
+                name={isExpanded ? 'chevron-up' : 'chevron-down'} 
+                size={20} 
+                color={colors.text.secondary} 
               />
-              <Text
-                color={hasActiveFilters ? (colors.isDark ? '#818cf8' : '#4f46e5') : colors.text.secondary}
-                size="sm"
-              >
-                Filters {hasActiveFilters ? `(${Object.values(currentFilters).filter(v => v !== 'all' && v !== undefined && v !== '').length})` : ''}
+              <Text size="sm" color={colors.text.secondary}>
+                {isExpanded ? 'Less' : 'More options'}
               </Text>
             </HStack>
-          </Button>
-        </HStack>
-      </ScrollView>
-    </Box>
-  );
+            
+            <HStack gap="$2">
+              {/* Filters Button */}
+              <Pressable
+                onPress={onToggleFilters}
+                py="$1.5" px="$3"
+                borderRadius="$md"
+                bg={hasActiveFilters ? (colors.isDark ? '$primary500' : '$primary100') : colors.background.input}
+                borderWidth={1}
+                borderColor={hasActiveFilters ? (colors.isDark ? '$primary400' : '$primary500') : colors.border.primary}
+              >
+                <HStack gap="$1.5" alignItems="center">
+                  <MaterialCommunityIcons
+                    name={hasActiveFilters ? 'filter-variant' : 'filter-outline'}
+                    size={16}
+                    color={hasActiveFilters ? 'white' : colors.text.secondary}
+                  />
+                  <Text size="xs" color={hasActiveFilters ? 'white' : colors.text.secondary}>
+                    Filters{hasActiveFilters ? ` (${filterCount})` : ''}
+                  </Text>
+                </HStack>
+              </Pressable>
+            </HStack>
+          </HStack>
+        </Pressable>
+        
+        {/* Expanded secondary actions */}
+        {isExpanded && (
+          <VStack gap="$2" mt="$2" pt="$2" borderTopWidth={1} borderColor={colors.border.primary}>
+            <HStack gap="$2" flexWrap="wrap">
+              {/* Add Category */}
+              <Pressable
+                onPress={() => handleAddCategory('expense')}
+                py="$2" px="$3"
+                borderRadius="$md"
+                bg={colors.background.input}
+                borderWidth={1}
+                borderColor={colors.border.primary}
+              >
+                <HStack gap="$1.5" alignItems="center">
+                  <MaterialCommunityIcons name="tag-plus-outline" size={16} color={colors.text.secondary} />
+                  <Text size="xs" color={colors.text.secondary}>Add Category</Text>
+                </HStack>
+              </Pressable>
+              
+              {/* Duplicate Last Expense */}
+              <Pressable
+                onPress={() => handleDuplicateLast('expense')}
+                py="$2" px="$3"
+                borderRadius="$md"
+                bg={colors.background.input}
+                borderWidth={1}
+                borderColor={colors.border.primary}
+              >
+                <HStack gap="$1.5" alignItems="center">
+                  <MaterialCommunityIcons name="content-copy" size={16} color={colors.text.secondary} />
+                  <Text size="xs" color={colors.text.secondary}>Dup. Last Exp</Text>
+                </HStack>
+              </Pressable>
+              
+              {/* Duplicate Last Income */}
+              <Pressable
+                onPress={() => handleDuplicateLast('income')}
+                py="$2" px="$3"
+                borderRadius="$md"
+                bg={colors.background.input}
+                borderWidth={1}
+                borderColor={colors.border.primary}
+              >
+                <HStack gap="$1.5" alignItems="center">
+                  <MaterialCommunityIcons name="content-copy" size={16} color={colors.text.secondary} />
+                  <Text size="xs" color={colors.text.secondary}>Dup. Last Inc</Text>
+                </HStack>
+              </Pressable>
+              
+              {/* History */}
+              <Pressable
+                onPress={onNavigateToHistory}
+                py="$2" px="$3"
+                borderRadius="$md"
+                bg={colors.background.input}
+                borderWidth={1}
+                borderColor={colors.border.primary}
+              >
+                <HStack gap="$1.5" alignItems="center">
+                  <MaterialCommunityIcons name="history" size={16} color={colors.text.secondary} />
+                  <Text size="xs" color={colors.text.secondary}>History</Text>
+                </HStack>
+              </Pressable>
+            </HStack>
+          </VStack>
+        )}
+      </Box>
+    );
+  };
   
   // Render Mobile Layout (Tabs)
   const renderMobileLayout = () => (
@@ -429,67 +620,127 @@ export default function Transactions() {
       {/* Quick Tools */}
       {renderQuickTools()}
       
-      {/* Tab Navigation */}
-      <HStack gap="$2" borderBottomWidth={1} borderColor={colors.border.primary} pb="$2">
-        <Pressable
-          flex={1}
-          onPress={() => setActiveTab('expense')}
-          py="$2"
-          borderBottomWidth={2}
-          borderBottomColor={activeTab === 'expense' ? '$error500' : 'transparent'}
-        >
-          <VStack alignItems="center" gap="$1">
-            <MaterialCommunityIcons
-              name="trending-down"
-              size={20}
-              color={activeTab === 'expense' ? '#ef4444' : colors.text.muted}
-            />
-            <Text
-              fontWeight="$semibold"
-              color={activeTab === 'expense' ? '#ef4444' : colors.text.muted}
-              size="sm"
-            >
-              Expenses
-            </Text>
-            <Text size="xs" color={colors.text.muted}>
-              {currencySymbol}{formatCurrencyWithSymbol(expenseTotal, currencySymbol, false)}
-            </Text>
-          </VStack>
-        </Pressable>
-        
-        <Pressable
-          flex={1}
-          onPress={() => setActiveTab('income')}
-          py="$2"
-          borderBottomWidth={2}
-          borderBottomColor={activeTab === 'income' ? '$success500' : 'transparent'}
-        >
-          <VStack alignItems="center" gap="$1">
-            <MaterialCommunityIcons
-              name="trending-up"
-              size={20}
-              color={activeTab === 'income' ? '#22c55e' : colors.text.muted}
-            />
-            <Text
-              fontWeight="$semibold"
-              color={activeTab === 'income' ? '#22c55e' : colors.text.muted}
-              size="sm"
-            >
-              Income
-            </Text>
-            <Text size="xs" color={colors.text.muted}>
-              {currencySymbol}{formatCurrencyWithSymbol(incomeTotal, currencySymbol, false)}
-            </Text>
-          </VStack>
-        </Pressable>
-      </HStack>
+      {/* Full-width Tab Navigation */}
+      <Box bg={colors.background.card} borderRadius="$lg" borderWidth={1} borderColor={colors.border.primary} p="$2">
+        <HStack gap="$2">
+          {/* Expense Tab */}
+          <Pressable
+            flex={1}
+            onPress={() => setActiveTab('expense')}
+            py="$3"
+            borderRadius="$md"
+            bg={activeTab === 'expense' ? (colors.isDark ? '#450a0a' : '#fef2f2') : 'transparent'}
+            borderWidth={2}
+            borderColor={activeTab === 'expense' ? '#ef4444' : 'transparent'}
+          >
+            <VStack alignItems="center" gap="$1">
+              <MaterialCommunityIcons
+                name="trending-down"
+                size={22}
+                color={activeTab === 'expense' ? '#ef4444' : colors.text.muted}
+              />
+              <Text
+                fontWeight="$bold"
+                color={activeTab === 'expense' ? '#ef4444' : colors.text.muted}
+                size="sm"
+              >
+                Expenses
+              </Text>
+              <Text size="xs" color={colors.text.muted} fontWeight="$semibold">
+                {currencySymbol}{formatCurrencyWithSymbol(expenseTotal, currencySymbol, false)}
+              </Text>
+            </VStack>
+          </Pressable>
+          
+          {/* Income Tab */}
+          <Pressable
+            flex={1}
+            onPress={() => setActiveTab('income')}
+            py="$3"
+            borderRadius="$md"
+            bg={activeTab === 'income' ? (colors.isDark ? '#14532d' : '#f0fdf4') : 'transparent'}
+            borderWidth={2}
+            borderColor={activeTab === 'income' ? '#22c55e' : 'transparent'}
+          >
+            <VStack alignItems="center" gap="$1">
+              <MaterialCommunityIcons
+                name="trending-up"
+                size={22}
+                color={activeTab === 'income' ? '#22c55e' : colors.text.muted}
+              />
+              <Text
+                fontWeight="$bold"
+                color={activeTab === 'income' ? '#22c55e' : colors.text.muted}
+                size="sm"
+              >
+                Income
+              </Text>
+              <Text size="xs" color={colors.text.muted} fontWeight="$semibold">
+                {currencySymbol}{formatCurrencyWithSymbol(incomeTotal, currencySymbol, false)}
+              </Text>
+            </VStack>
+          </Pressable>
+        </HStack>
+      </Box>
       
       {/* Tab Content */}
-      <ScrollView flex={1}>
+      <ScrollView flex={1} showsVerticalScrollIndicator={false}>
         {activeTab === 'expense'
           ? renderTransactionList(filteredExpenseTransactions, 'expense')
           : renderTransactionList(filteredIncomeTransactions, 'income')}
       </ScrollView>
+      
+      {/* Sticky bottom quick actions */}
+      <Box
+        position="absolute"
+        bottom={0}
+        left={0}
+        right={0}
+        bg={colors.background.primary}
+        borderTopWidth={1}
+        borderColor={colors.border.primary}
+        p="$3"
+      >
+        <HStack gap="$3">
+          <Pressable
+            flex={1}
+            onPress={handleAddIncome}
+            py="$3"
+            bg={colors.isDark ? '#14532d' : '#f0fdf4'}
+            borderWidth={1}
+            borderColor={colors.isDark ? '#22c55e' : '#16a34a'}
+            borderRadius="$lg"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <HStack gap="$2" alignItems="center">
+              <MaterialCommunityIcons name="plus" size={20} color="#22c55e" />
+              <Text color={colors.isDark ? '#4ade80' : '#16a34a'} fontWeight="$bold" size="sm">
+                Income
+              </Text>
+            </HStack>
+          </Pressable>
+          
+          <Pressable
+            flex={1}
+            onPress={handleAddExpense}
+            py="$3"
+            bg={colors.isDark ? '#7f1d1d' : '#fef2f2'}
+            borderWidth={1}
+            borderColor={colors.isDark ? '#ef4444' : '#dc2626'}
+            borderRadius="$lg"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <HStack gap="$2" alignItems="center">
+              <MaterialCommunityIcons name="plus" size={20} color="#ef4444" />
+              <Text color={colors.isDark ? '#f87171' : '#dc2626'} fontWeight="$bold" size="sm">
+                Expense
+              </Text>
+            </HStack>
+          </Pressable>
+        </HStack>
+      </Box>
     </VStack>
   );
   

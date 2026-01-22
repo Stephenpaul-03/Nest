@@ -27,6 +27,7 @@ import {
 } from '@gluestack-ui/themed';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { useSelector } from 'react-redux';
 
 // ============================================================================
@@ -88,10 +89,90 @@ function useMedicalAlerts() {
 // Section Components
 // ============================================================================
 
-function FinanceSummarySection() {
+function FinanceSummarySection({ isMobile }: { isMobile: boolean }) {
   const { income, expense } = useFinanceSummary();
   const router = useRouter();
+  const colors = useThemedColors();
 
+  if (isMobile) {
+    // Mobile: Stack values vertically with clear labels
+    return (
+      <VStack gap="$4">
+        {/* Section Header */}
+        <HStack gap="$2" alignItems="center">
+          <MaterialCommunityIcons
+            name="trending-up"
+            size={20}
+            color={colors.text.muted}
+          />
+          <Text size="lg" fontWeight="$bold" color={colors.text.primary}>
+            Finance
+          </Text>
+        </HStack>
+
+        {/* Net Balance Card */}
+        <NetBalanceCard income={income} expense={expense} />
+
+        {/* Income & Expense Stacked */}
+        <VStack gap="$3">
+          <Box
+            bg={colors.background.card}
+            borderRadius="$lg"
+            borderWidth={1}
+            borderColor={colors.border.primary}
+            p="$4"
+          >
+            <VStack gap="$1">
+              <Text size="sm" color={colors.text.muted} fontWeight="$medium">
+                Income (MTD)
+              </Text>
+              <Text size="2xl" fontWeight="$bold" color={colors.isDark ? '#4ade80' : '#16a34a'}>
+                +${income.toLocaleString()}
+              </Text>
+            </VStack>
+          </Box>
+
+          <Box
+            bg={colors.background.card}
+            borderRadius="$lg"
+            borderWidth={1}
+            borderColor={colors.border.primary}
+            p="$4"
+          >
+            <VStack gap="$1">
+              <Text size="sm" color={colors.text.muted} fontWeight="$medium">
+                Expense (MTD)
+              </Text>
+              <Text size="2xl" fontWeight="$bold" color={colors.isDark ? '#f87171' : '#dc2626'}>
+                -${expense.toLocaleString()}
+              </Text>
+            </VStack>
+          </Box>
+        </VStack>
+
+        {/* Navigation Link */}
+        <Pressable onPress={() => router.push('/(app)/finance/transactions' as any)}>
+          <HStack
+            justifyContent="center"
+            alignItems="center"
+            gap="$1"
+            py="$2"
+          >
+            <Text size="sm" color="$textMuted">
+              View Transactions
+            </Text>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={16}
+              color="#9ca3af"
+            />
+          </HStack>
+        </Pressable>
+      </VStack>
+    );
+  }
+
+  // Desktop: Keep existing horizontal layout
   return (
     <VStack gap="$3">
       {/* Section Header */}
@@ -150,11 +231,121 @@ function FinanceSummarySection() {
   );
 }
 
-function EventsSummarySection() {
+function EventsSummarySection({ isMobile }: { isMobile: boolean }) {
   const { nextEvent, eventsIn7Days, eventsIn30Days } = useEventsSummary();
   const router = useRouter();
   const colors = useThemedColors();
 
+  if (isMobile) {
+    // Mobile: Vertical stacking with compact counts
+    return (
+      <VStack gap="$4">
+        {/* Section Header */}
+        <HStack gap="$2" alignItems="center">
+          <MaterialCommunityIcons
+            name="calendar"
+            size={20}
+            color={colors.text.muted}
+          />
+          <Text size="lg" fontWeight="$bold" color={colors.text.primary}>
+            Events
+          </Text>
+        </HStack>
+
+        {/* Next Event Card */}
+        {nextEvent ? (
+          <Box
+            bg={colors.background.card}
+            borderRadius="$lg"
+            borderWidth={1}
+            borderColor={colors.border.primary}
+            p="$4"
+          >
+            <VStack gap="$2">
+              <Text size="xs" color={colors.text.muted} fontWeight="$medium">
+                Next Event
+              </Text>
+              <Text size="lg" fontWeight="$semibold" color={colors.text.primary}>
+                {nextEvent.title}
+              </Text>
+              <Text size="sm" color={colors.text.secondary}>
+                {formatDateTime(nextEvent.startDateTime)}
+              </Text>
+            </VStack>
+          </Box>
+        ) : (
+          <Box
+            bg={colors.background.card}
+            borderRadius="$lg"
+            borderWidth={1}
+            borderColor={colors.border.primary}
+            p="$4"
+          >
+            <Text size="sm" color={colors.text.muted}>
+              No upcoming events
+            </Text>
+          </Box>
+        )}
+
+        {/* Event Counts - Stacked on mobile */}
+        <VStack gap="$3">
+          <Box
+            bg={colors.background.card}
+            borderRadius="$lg"
+            borderWidth={1}
+            borderColor={colors.border.primary}
+            p="$4"
+          >
+            <HStack justifyContent="space-between" alignItems="center">
+              <Text size="sm" color={colors.text.muted}>
+                Next 7 days
+              </Text>
+              <Text size="xl" fontWeight="$bold" color={colors.text.primary}>
+                {eventsIn7Days}
+              </Text>
+            </HStack>
+          </Box>
+          <Box
+            bg={colors.background.card}
+            borderRadius="$lg"
+            borderWidth={1}
+            borderColor={colors.border.primary}
+            p="$4"
+          >
+            <HStack justifyContent="space-between" alignItems="center">
+              <Text size="sm" color={colors.text.muted}>
+                Next 30 days
+              </Text>
+              <Text size="xl" fontWeight="$bold" color={colors.text.primary}>
+                {eventsIn30Days}
+              </Text>
+            </HStack>
+          </Box>
+        </VStack>
+
+        {/* Navigation Link */}
+        <Pressable onPress={() => router.push('/(app)/events' as any)}>
+          <HStack
+            justifyContent="center"
+            alignItems="center"
+            gap="$1"
+            py="$2"
+          >
+            <Text size="sm" color="$textMuted">
+              View Calendar
+            </Text>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={16}
+              color="#9ca3af"
+            />
+          </HStack>
+        </Pressable>
+      </VStack>
+    );
+  }
+
+  // Desktop: Keep existing layout
   return (
     <VStack gap="$3">
       {/* Section Header */}
@@ -266,10 +457,75 @@ function EventsSummarySection() {
   );
 }
 
-function MedicalAlertsSection() {
+function MedicalAlertsSection({ isMobile }: { isMobile: boolean }) {
   const alerts = useMedicalAlerts();
   const router = useRouter();
+  const colors = useThemedColors();
 
+  if (isMobile) {
+    // Mobile: Stack alert cards vertically as full-width rows
+    return (
+      <VStack gap="$4">
+        {/* Section Header */}
+        <HStack gap="$2" alignItems="center">
+          <MaterialCommunityIcons
+            name="medical-bag"
+            size={20}
+            color={colors.text.muted}
+          />
+          <Text size="lg" fontWeight="$bold" color={colors.text.primary}>
+            Medical Alerts
+          </Text>
+        </HStack>
+
+        {/* Alert Cards - Stacked Vertically */}
+        <VStack gap="$3">
+          <AlertCard
+            title="Low Stock"
+            count={alerts.lowStockCount}
+            alertType="warning"
+            icon="alert-circle-outline"
+            description="Below threshold"
+          />
+          <AlertCard
+            title="Expiring Soon"
+            count={alerts.expiringSoonCount}
+            alertType="warning"
+            icon="clock-alert-outline"
+            description="Within 30 days"
+          />
+          <AlertCard
+            title="Out of Stock"
+            count={alerts.outOfStockCount}
+            alertType="error"
+            icon="package-variant-remove"
+            description="Need restocking"
+          />
+        </VStack>
+
+        {/* Navigation Link */}
+        <Pressable onPress={() => router.push('/(app)/medicals/inventory' as any)}>
+          <HStack
+            justifyContent="center"
+            alignItems="center"
+            gap="$1"
+            py="$2"
+          >
+            <Text size="sm" color="$textMuted">
+              View Inventory
+            </Text>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={16}
+              color="#9ca3af"
+            />
+          </HStack>
+        </Pressable>
+      </VStack>
+    );
+  }
+
+  // Desktop: Keep existing flex-wrap layout
   return (
     <VStack gap="$3">
       {/* Section Header */}
@@ -361,6 +617,10 @@ function EmptyState() {
 
 export default function Dashboard() {
   const colors = useThemedColors();
+  
+  // Mobile detection
+  const { width } = useWindowDimensions();
+  const isMobile = width < 640;
 
   // Get enabled tools from workspace config
   const activeWorkspace = useSelector(
@@ -381,17 +641,22 @@ export default function Dashboard() {
   // Check if any tools are enabled
   const hasEnabledTools = showFinance || showEvents || showMedicals;
 
+  // Responsive spacing
+  const containerPadding = isMobile ? '$4' : '$4';
+  const containerGap = isMobile ? '$6' : '$8';
+  const sectionGap = isMobile ? '$4' : '$3';
+
   return (
     <ScrollView
       flex={1}
       bg={colors.background.primary}
       contentContainerStyle={{ flexGrow: 1 }}
-      px="$4"
-      py="$6"
+      px={containerPadding}
+      py={isMobile ? '$6' : '$6'}
     >
       {/* Workspace Title */}
-      <Box mb="$6">
-        <Text size="xl" fontWeight="$bold" color={colors.text.primary}>
+      <Box mb={isMobile ? '$6' : '$6'}>
+        <Text size={isMobile ? 'xl' : 'xl'} fontWeight="$bold" color={colors.text.primary}>
           {activeWorkspace} Workspace
         </Text>
         <Text size="sm" color={colors.text.muted}>
@@ -403,15 +668,27 @@ export default function Dashboard() {
       {!hasEnabledTools ? (
         <EmptyState />
       ) : (
-        <VStack gap="$8">
+        <VStack gap={containerGap}>
           {/* Finance Section */}
-          {showFinance && <FinanceSummarySection />}
+          {showFinance && (
+            <Box>
+              <FinanceSummarySection isMobile={isMobile} />
+            </Box>
+          )}
 
           {/* Events Section */}
-          {showEvents && <EventsSummarySection />}
+          {showEvents && (
+            <Box>
+              <EventsSummarySection isMobile={isMobile} />
+            </Box>
+          )}
 
           {/* Medicals Section */}
-          {showMedicals && <MedicalAlertsSection />}
+          {showMedicals && (
+            <Box>
+              <MedicalAlertsSection isMobile={isMobile} />
+            </Box>
+          )}
         </VStack>
       )}
     </ScrollView>

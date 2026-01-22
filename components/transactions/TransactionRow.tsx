@@ -1,6 +1,7 @@
 /**
  * Transaction Row Component
  * Displays a single transaction in the transactions list
+ * Mobile-optimized vertical stack layout
  */
 
 import { useThemedColors } from '@/constants/colors';
@@ -22,9 +23,10 @@ interface TransactionRowProps {
   transaction: Transaction;
   onEdit: () => void;
   onDelete: () => void;
+  isMobile?: boolean;
 }
 
-export function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
+export function TransactionRow({ transaction, onEdit, onDelete, isMobile = false }: TransactionRowProps) {
   const colors = useThemedColors();
   const activeWorkspace = useSelector((state: RootState) => state.auth.activeWorkspace);
   const currencySymbol = useSelector((state: RootState) => 
@@ -36,6 +38,155 @@ export function TransactionRow({ transaction, onEdit, onDelete }: TransactionRow
   const iconBg = isIncome ? (colors.isDark ? '#14532d' : '#f0fdf4') : (colors.isDark ? '#450a0a' : '#fef2f2');
   const iconColor = isIncome ? '#22c55e' : '#ef4444';
   
+  // Mobile layout: vertical stack for better readability
+  if (isMobile) {
+    return (
+      <Box
+        bg={colors.background.card}
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor={colors.border.primary}
+        p="$4"
+        mb="$3"
+      >
+        {/* Header Row: Category + Amount */}
+        <HStack justifyContent="space-between" alignItems="flex-start" mb="$2">
+          <VStack flex={1} gap="$1">
+            <HStack gap="$2" alignItems="center">
+              <Box bg={iconBg} p="$2" borderRadius="$md">
+                <MaterialCommunityIcons
+                  name={isIncome ? 'trending-up' : 'trending-down'}
+                  size={18}
+                  color={iconColor}
+                />
+              </Box>
+              <Text
+                size="lg"
+                fontWeight="$semibold"
+                color={colors.text.primary}
+                numberOfLines={1}
+              >
+                {transaction.category}
+              </Text>
+            </HStack>
+          </VStack>
+          
+          <Text
+            size="xl"
+            fontWeight="$bold"
+            color={amountColor}
+          >
+            {isIncome ? '+' : '-'}{formatCurrencyWithSymbol(transaction.amount, currencySymbol)}
+          </Text>
+        </HStack>
+        
+        {/* Secondary Info: Date + Account */}
+        <HStack gap="$3" alignItems="center" mb="$2">
+          <HStack gap="$1.5" alignItems="center">
+            <MaterialCommunityIcons
+              name="calendar-blank"
+              size={14}
+              color={colors.text.muted}
+            />
+            <Text size="sm" color={colors.text.muted}>
+              {formatDate(transaction.date)}
+            </Text>
+          </HStack>
+          
+          <HStack gap="$1" alignItems="center">
+            <MaterialCommunityIcons
+              name={transaction.account === 'cash' ? 'cash' : 'credit-card-outline'}
+              size={14}
+              color={colors.text.muted}
+            />
+            <Text size="sm" color={colors.text.muted}>
+              {transaction.account === 'cash' ? 'Cash' : 'Card'}
+            </Text>
+          </HStack>
+        </HStack>
+        
+        {/* Notes and Tags */}
+        {(transaction.notes || (transaction.tags && transaction.tags.length > 0)) && (
+          <VStack gap="$2">
+            {transaction.notes && (
+              <Text size="sm" color={colors.text.secondary} numberOfLines={1}>
+                {transaction.notes}
+              </Text>
+            )}
+            {transaction.tags && transaction.tags.length > 0 && (
+              <HStack gap="$1" flexWrap="wrap">
+                {transaction.tags.slice(0, 3).map((tag) => (
+                  <Box
+                    key={tag}
+                    bg={colors.background.secondary}
+                    px="$2"
+                    py="$0.5"
+                    borderRadius="$full"
+                  >
+                    <Text size="xs" color={colors.text.muted}>
+                      {tag}
+                    </Text>
+                  </Box>
+                ))}
+                {transaction.tags.length > 3 && (
+                  <Box
+                    bg={colors.background.secondary}
+                    px="$2"
+                    py="$0.5"
+                    borderRadius="$full"
+                  >
+                    <Text size="xs" color={colors.text.muted}>
+                      +{transaction.tags.length - 3}
+                    </Text>
+                  </Box>
+                )}
+              </HStack>
+            )}
+          </VStack>
+        )}
+        
+        {/* Action Buttons - Easy tap targets */}
+        <HStack gap="$2" mt="$3" pt="$2" borderTopWidth={1} borderColor={colors.border.primary}>
+          <Pressable
+            onPress={onEdit}
+            hitSlop={12}
+            p="$2"
+            borderRadius="$md"
+            bg={colors.background.input}
+            flex={1}
+          >
+            <HStack gap="$1.5" alignItems="center" justifyContent="center">
+              <MaterialCommunityIcons
+                name="pencil-outline"
+                size={16}
+                color={colors.text.secondary}
+              />
+              <Text size="sm" color={colors.text.secondary}>Edit</Text>
+            </HStack>
+          </Pressable>
+          <Pressable
+            onPress={onDelete}
+            hitSlop={12}
+            p="$2"
+            borderRadius="$md"
+            bg={colors.background.input}
+            flex={1}
+          >
+            <HStack gap="$1.5" alignItems="center" justifyContent="center">
+              <MaterialCommunityIcons
+                name="delete-outline"
+                size={16}
+                color="#ef4444"
+              />
+              <Text size="sm" color="#ef4444">Delete</Text>
+            </HStack>
+          </Pressable>
+        </HStack>
+      </Box>
+    );
+  }
+  
+  // Desktop layout: horizontal row
   return (
     <Box
       bg={colors.background.card}

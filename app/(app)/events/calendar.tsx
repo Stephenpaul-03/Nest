@@ -7,12 +7,14 @@ import { CalendarView } from '@/components/events/CalendarView';
 import { EventModal } from '@/components/events/EventModal';
 import { TimelinePanel } from '@/components/events/TimelinePanel';
 import { useThemedColors } from '@/constants/colors';
+import { RootState } from '@/src/store';
 import {
   closeModal,
   openAddModal,
   selectIsEventModalOpen,
   selectTimelineTab
 } from '@/src/store/eventsSlice';
+import selectItems from '@/src/store/eventsSlice';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   Box,
@@ -28,6 +30,62 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 
+// Render empty state for events
+function EventsEmptyState({ onAddEvent }: { onAddEvent: () => void }) {
+  const colors = useThemedColors();
+
+  return (
+    <Box
+      bg={colors.background.card}
+      borderRadius="$lg"
+      p="$12"
+      alignItems="center"
+      justifyContent="center"
+      borderWidth={1}
+      borderColor={colors.border.primary}
+    >
+      <MaterialCommunityIcons
+        name="calendar-blank"
+        size={64}
+        color={colors.text.muted}
+      />
+      <Text
+        size="xl"
+        fontWeight="$semibold"
+        color={colors.text.secondary}
+        mt="$4"
+        textAlign="center"
+      >
+        No events scheduled
+      </Text>
+      <Text
+        size="sm"
+        color={colors.text.muted}
+        mt="$1"
+        textAlign="center"
+        mb="$4"
+      >
+        Add events and appointments to your workspace calendar
+      </Text>
+      <Button
+        onPress={onAddEvent}
+        bg={colors.isDark ? '$primary500' : '$primary600'}
+      >
+        <HStack gap="$2" alignItems="center">
+          <MaterialCommunityIcons
+            name="plus"
+            size={18}
+            color="white"
+          />
+          <ButtonText color="white" fontWeight="$semibold">
+            Add Event
+          </ButtonText>
+        </HStack>
+      </Button>
+    </Box>
+  );
+}
+
 export default function Calendar() {
   const dispatch = useDispatch();
   const colors = useThemedColors();
@@ -35,12 +93,13 @@ export default function Calendar() {
   
   const isModalOpen = useSelector(selectIsEventModalOpen);
   const timelineTab = useSelector(selectTimelineTab);
+  const events = useSelector((state: RootState) => state.events.items);
   
   // Responsive breakpoints
   const isMobile = width < 640;
   const isTablet = width >= 640 && width < 1024;
   
-  const handleAddEvent = () => dispatch(openAddModal());
+  const handleAddEvent = () => dispatch(openAddModal());:
   const handleCloseModal = () => dispatch(closeModal());
   
   // Mobile layout: Stack vertically
@@ -63,7 +122,7 @@ export default function Calendar() {
               Events Calendar
             </Text>
             <Text size="sm" color={colors.text.muted}>
-              Workspace events and shared planning
+              {events.length} event{events.length !== 1 ? 's' : ''}
             </Text>
           </VStack>
           
@@ -89,15 +148,21 @@ export default function Calendar() {
         
         {/* Main Content - Stacked */}
         <VStack flex={1} p="$4" gap="$4">
-          {/* Calendar */}
-          <Box flex={1}>
-            <CalendarView />
-          </Box>
-          
-          {/* Timeline Panel */}
-          <Box flex={1} minHeight={300}>
-            <TimelinePanel />
-          </Box>
+          {events.length === 0 ? (
+            <EventsEmptyState onAddEvent={handleAddEvent} />
+          ) : (
+            <>
+              {/* Calendar */}
+              <Box flex={1}>
+                <CalendarView />
+              </Box>
+              
+              {/* Timeline Panel */}
+              <Box flex={1} minHeight={300}>
+                <TimelinePanel />
+              </Box>
+            </>
+          )}
         </VStack>
         
         {/* Event Modal */}
@@ -124,7 +189,7 @@ export default function Calendar() {
             Events Calendar
           </Text>
           <Text size="sm" color={colors.text.muted}>
-            Workspace events and shared planning
+            {events.length} event{events.length !== 1 ? 's' : ''}
           </Text>
         </VStack>
         
@@ -146,26 +211,30 @@ export default function Calendar() {
       </HStack>
       
       {/* Main Content - Split View */}
-      <HStack
-        gap="$4"
-        flex={1}
-        alignItems="flex-start"
-      >
-        {/* Left Side - Calendar */}
-        <Box flex={1.5} minWidth={0}>
-          <CalendarView />
-        </Box>
-        
-        {/* Right Side - Timeline Panel */}
-        <Box
+      {events.length === 0 ? (
+        <EventsEmptyState onAddEvent={handleAddEvent} />
+      ) : (
+        <HStack
+          gap="$4"
           flex={1}
-          minWidth={300}
-          maxWidth={400}
-          height="100%"
+          alignItems="flex-start"
         >
-          <TimelinePanel />
-        </Box>
-      </HStack>
+          {/* Left Side - Calendar */}
+          <Box flex={1.5} minWidth={0}>
+            <CalendarView />
+          </Box>
+          
+          {/* Right Side - Timeline Panel */}
+          <Box
+            flex={1}
+            minWidth={300}
+            maxWidth={400}
+            height="100%"
+          >
+            <TimelinePanel />
+          </Box>
+        </HStack>
+      )}
       
       {/* Event Modal */}
       <EventModal isOpen={isModalOpen} onClose={handleCloseModal} />

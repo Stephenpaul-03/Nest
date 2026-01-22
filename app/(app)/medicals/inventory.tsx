@@ -85,18 +85,48 @@ export default function Inventory() {
   const renderAlerts = () => (
     <Box bg={colors.background.card} borderRadius="$lg" borderWidth={1} borderColor={colors.border.primary} p={isMobile ? "$3" : "$4"}>
       <HStack gap="$2" alignItems="center" mb="$3"><MaterialCommunityIcons name="alert-circle-outline" size={isMobile ? 18 : 20} color={colors.text.secondary} /><Text size={isMobile ? "sm" : "md"} fontWeight="$semibold" color={colors.text.primary}>Overview</Text></HStack>
-      <VStack gap="$2"><LowStockAlertCard count={alerts.lowStockCount} /><ExpiringSoonAlertCard count={alerts.expiringSoonCount} /><ExpiredAlertCard count={alerts.expiredCount} /><OutOfStockAlertCard count={alerts.outOfStockCount} /></VStack>
+      {items.length === 0 ? (
+        <Text size="sm" color={colors.text.muted} textAlign="center" py="$4">
+          Add items to see alerts
+        </Text>
+      ) : (
+        <VStack gap="$2"><LowStockAlertCard count={alerts.lowStockCount} /><ExpiringSoonAlertCard count={alerts.expiringSoonCount} /><ExpiredAlertCard count={alerts.expiredCount} /><OutOfStockAlertCard count={alerts.outOfStockCount} /></VStack>
+      )}
     </Box>
   );
 
   const renderSummary = () => (
     <Box bg={colors.background.card} borderRadius="$lg" borderWidth={1} borderColor={colors.border.primary} p={isMobile ? "$3" : "$4"}>
       <Text size={isMobile ? "sm" : "md"} fontWeight="$semibold" color={colors.text.primary} mb="$3">Summary</Text>
-      <VStack gap="$2">
-        <HStack justifyContent="space-between"><Text size="sm" color={colors.text.secondary}>Total Medications</Text><Text size="sm" fontWeight="$semibold" color={colors.text.primary}>{filteredItems.length}</Text></HStack>
-        <HStack justifyContent="space-between"><Text size="sm" color={colors.text.secondary}>Active</Text><Text size="sm" fontWeight="$semibold" color={colors.text.primary}>{filteredItems.filter((i) => i.status === 'active').length}</Text></HStack>
-        <HStack justifyContent="space-between"><Text size="sm" color={colors.text.secondary}>Out of Stock</Text><Text size="sm" fontWeight="$semibold" color={colors.text.primary}>{filteredItems.filter((i) => i.status === 'out_of_stock').length}</Text></HStack>
-      </VStack>
+      {items.length === 0 ? (
+        <Text size="sm" color={colors.text.muted} textAlign="center" py="$4">
+          Add items to see summary
+        </Text>
+      ) : (
+        <VStack gap="$2">
+          <HStack justifyContent="space-between"><Text size="sm" color={colors.text.secondary}>Total Medications</Text><Text size="sm" fontWeight="$semibold" color={colors.text.primary}>{filteredItems.length}</Text></HStack>
+          <HStack justifyContent="space-between"><Text size="sm" color={colors.text.secondary}>Active</Text><Text size="sm" fontWeight="$semibold" color={colors.text.primary}>{filteredItems.filter((i) => i.status === 'active').length}</Text></HStack>
+          <HStack justifyContent="space-between"><Text size="sm" color={colors.text.secondary}>Out of Stock</Text><Text size="sm" fontWeight="$semibold" color={colors.text.primary}>{filteredItems.filter((i) => i.status === 'out_of_stock').length}</Text></HStack>
+        </VStack>
+      )}
+    </Box>
+  );
+
+  const renderEmptyState = () => (
+    <Box bg={colors.background.card} borderRadius="$lg" p="$8" alignItems="center" justifyContent="center" borderWidth={1} borderColor={colors.border.primary}>
+      <MaterialCommunityIcons name="pill" size={64} color={colors.text.muted} />
+      <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} mt="$4" textAlign="center">
+        No medical items added
+      </Text>
+      <Text size="sm" color={colors.text.muted} mt="$1" textAlign="center" mb="$4">
+        Add medicine or supplies to start tracking your inventory
+      </Text>
+      <Button onPress={handleAddItem} bg={colors.isDark ? '$primary500' : '$primary600'}>
+        <HStack gap="$2" alignItems="center">
+          <MaterialCommunityIcons name="plus" size={18} color="white" />
+          <ButtonText color="white" fontWeight="$semibold">Add medicine or supply</ButtonText>
+        </HStack>
+      </Button>
     </Box>
   );
 
@@ -111,18 +141,20 @@ export default function Inventory() {
           <Button mt="$3" w="100%" onPress={handleAddItem} bg={colors.isDark ? '$primary500' : '$primary600'}><HStack gap="$2" alignItems="center"><MaterialCommunityIcons name="plus" size={18} color="white" /><ButtonText color="white" fontWeight="$semibold">Add Medication</ButtonText></HStack></Button>
         </Box>
         <ScrollView flex={1} p="$4" showsVerticalScrollIndicator={true}>
-          {renderAlerts()}
-          {renderFilters()}
+          {items.length > 0 && (
+            <>
+              {renderAlerts()}
+              {renderFilters()}
+            </>
+          )}
           <VStack gap="$2" mt="$2">
-            {filteredItems.length === 0 ? (
-              <Box bg={colors.background.card} borderRadius="$lg" p="$8" alignItems="center" justifyContent="center" mt="$4">
-                <MaterialCommunityIcons name="pill" size={isMobile ? 40 : 48} color={colors.text.muted} />
-                <Text size="lg" color={colors.text.secondary} mt="$2">No medications found</Text>
-                <Text size="sm" color={colors.text.muted}>Add a new medication to get started</Text>
-              </Box>
-            ) : filteredItems.map((item) => (<InventoryItemRow key={item.id} item={item} onEdit={() => handleEditItem(item.id)} onDelete={() => handleDeleteItem(item.id)} onIncrement={() => handleIncrement(item.id)} onDecrement={() => handleDecrement(item.id)} />))}
+            {items.length === 0 ? (
+              renderEmptyState()
+            ) : (
+              filteredItems.map((item) => (<InventoryItemRow key={item.id} item={item} onEdit={() => handleEditItem(item.id)} onDelete={() => handleDeleteItem(item.id)} onIncrement={() => handleIncrement(item.id)} onDecrement={() => handleDecrement(item.id)} />))
+            )}
           </VStack>
-          {renderSummary()}
+          {items.length > 0 && renderSummary()}
         </ScrollView>
         <ItemModal isOpen={isModalOpen} onClose={() => dispatch(closeModal())} />
       </Box>
@@ -140,20 +172,22 @@ export default function Inventory() {
       </HStack>
       <HStack gap="$4" flex={1} alignItems="flex-start">
         <VStack flex={1} gap="$4" maxWidth="70%">
-          {renderFilters()}
+          {items.length > 0 && renderFilters()}
           <ScrollView flex={1} showsVerticalScrollIndicator={true}>
-            {filteredItems.length === 0 ? (
-              <Box bg={colors.background.card} borderRadius="$lg" p="$8" alignItems="center" justifyContent="center">
-                <MaterialCommunityIcons name="pill" size={48} color={colors.text.muted} />
-                <Text size="lg" color={colors.text.secondary} mt="$2">No medications found</Text>
-                <Text size="sm" color={colors.text.muted}>Add a new medication to get started</Text>
-              </Box>
-            ) : filteredItems.map((item) => (<InventoryItemRow key={item.id} item={item} onEdit={() => handleEditItem(item.id)} onDelete={() => handleDeleteItem(item.id)} onIncrement={() => handleIncrement(item.id)} onDecrement={() => handleDecrement(item.id)} />))}
+            {items.length === 0 ? (
+              renderEmptyState()
+            ) : (
+              filteredItems.map((item) => (<InventoryItemRow key={item.id} item={item} onEdit={() => handleEditItem(item.id)} onDelete={() => handleDeleteItem(item.id)} onIncrement={() => handleIncrement(item.id)} onDecrement={() => handleDecrement(item.id)} />))
+            )}
           </ScrollView>
         </VStack>
         <VStack gap="$4" minWidth={280} maxWidth="30%">
-          {renderAlerts()}
-          {renderSummary()}
+          {items.length > 0 && (
+            <>
+              {renderAlerts()}
+              {renderSummary()}
+            </>
+          )}
         </VStack>
       </HStack>
       <ItemModal isOpen={isModalOpen} onClose={() => dispatch(closeModal())} />

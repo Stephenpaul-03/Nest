@@ -204,29 +204,52 @@ export default function Transactions() {
   };
   
   // Render empty state
-  const renderEmptyState = (type: TransactionType) => (
-    <Box
-      bg={colors.background.card}
-      borderRadius="$lg"
-      borderWidth={1}
-      borderColor={colors.border.primary}
-      p="$8"
-      alignItems="center"
-      justifyContent="center"
-    >
-      <MaterialCommunityIcons
-        name={type === 'income' ? 'trending-up' : 'trending-down'}
-        size={48}
-        color={colors.text.muted}
-      />
-      <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} mt="$4">
-        No {type === 'income' ? 'income' : 'expenses'} yet
-      </Text>
-      <Text size="sm" color={colors.text.muted} mt="$1" textAlign="center">
-        Add your first {type === 'income' ? 'income' : 'expense'} using the Quick Tools above
-      </Text>
-    </Box>
-  );
+  const renderEmptyState = (type: TransactionType) => {
+    const router = useRouter();
+    const colors = useThemedColors();
+    
+    return (
+      <Box
+        bg={colors.background.card}
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor={colors.border.primary}
+        p="$8"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <MaterialCommunityIcons
+          name={type === 'income' ? 'trending-up' : 'trending-down'}
+          size={48}
+          color={colors.text.muted}
+        />
+        <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} mt="$4" textAlign="center">
+          No {type === 'income' ? 'income' : 'expenses'} yet
+        </Text>
+        <Text size="sm" color={colors.text.muted} mt="$1" textAlign="center" mb="$4">
+          {type === 'income' 
+            ? 'Add your first income entry to start tracking'
+            : 'Add your first expense to start tracking'}
+        </Text>
+        <HStack gap="$3">
+          <Pressable
+            onPress={() => router.push('/(app)/finance/transactions' as any)}
+          >
+            <Box
+              bg={colors.isDark ? '$primary600' : '$primary500'}
+              borderRadius="$md"
+              px="$4"
+              py="$2"
+            >
+              <Text color="white" fontWeight="$semibold" size="sm">
+                {type === 'income' ? 'Add Income' : 'Add Expense'}
+              </Text>
+            </Box>
+          </Pressable>
+        </HStack>
+      </Box>
+    );
+  };
   
   // Render transaction list
   const renderTransactionList = (transactions: Transaction[], type: TransactionType) => {

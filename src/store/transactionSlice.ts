@@ -6,7 +6,6 @@
 import {
   DEFAULT_EXPENSE_CATEGORIES,
   DEFAULT_INCOME_CATEGORIES,
-  SAMPLE_TRANSACTIONS,
   Transaction,
   TransactionFilters,
   TransactionFormData,
@@ -31,24 +30,9 @@ const initialFilters: TransactionFilters = {
   tags: undefined,
 };
 
-// Create sample transactions with IDs and timestamps
-const createSampleTransactions = (): Transaction[] => {
-  return SAMPLE_TRANSACTIONS.map((t, index) => {
-    const date = new Date(t.date);
-    date.setDate(date.getDate() - index); // Spread dates
-    const isoDate = date.toISOString().split('T')[0];
-    return {
-      ...t,
-      date: isoDate,
-      id: `sample-${index + 1}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-  });
-};
-
+// Initialize with empty transactions - no mock data
 const initialState: TransactionState = {
-  transactions: createSampleTransactions(),
+  transactions: [],
   incomeCategories: [...DEFAULT_INCOME_CATEGORIES],
   expenseCategories: [...DEFAULT_EXPENSE_CATEGORIES],
   filters: initialFilters,

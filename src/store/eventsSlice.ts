@@ -4,15 +4,15 @@
  */
 
 import {
-    Event,
-    EventFormData,
-    EventsState,
-    TimePeriod,
-    WeekStartDay
+  Event,
+  EventFormData,
+  EventsState,
+  TimePeriod,
+  WeekStartDay
 } from '@/src/types/event';
 import {
-    createEvent,
-    formatDate
+  createEvent,
+  formatDate
 } from '@/src/utils/eventHelpers';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
@@ -28,116 +28,9 @@ const getCurrentMonth = (): string => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 };
 
-// Sample events for demo
-const createSampleEvent = (
-  id: string,
-  title: string,
-  startDateTime: string,
-  endDateTime?: string,
-  isAllDay: boolean = false,
-  recurrence: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly' = 'none',
-  description?: string
-): Event => {
-  const now = new Date().toISOString();
-  const startDate = new Date(startDateTime);
-  const end = endDateTime 
-    ? new Date(endDateTime)
-    : isAllDay 
-      ? new Date(startDateTime) 
-      : new Date(startDateTime);
-  
-  return {
-    id,
-    title,
-    description,
-    startDateTime,
-    endDateTime: endDateTime || (isAllDay ? formatDate(end) : undefined),
-    isAllDay,
-    isMultiDay: isAllDay && endDateTime && formatDate(new Date(startDateTime)) !== formatDate(end),
-    recurrence,
-    createdBy: 'Current User',
-    createdAt: now,
-    updatedAt: now,
-  };
-};
-
-const sampleEvents: Event[] = [
-  createSampleEvent(
-    'evt_1',
-    'Team Standup',
-    new Date(new Date().setHours(9, 0, 0, 0)).toISOString(),
-    new Date(new Date().setHours(9, 30, 0, 0)).toISOString(),
-    false,
-    'none',
-    'Daily team sync meeting'
-  ),
-  createSampleEvent(
-    'evt_2',
-    'Project Review',
-    new Date(new Date().setDate(new Date().getDate() + 1)).toISOString(),
-    undefined,
-    true,
-    'none',
-    'Weekly project status review'
-  ),
-  createSampleEvent(
-    'evt_3',
-    'Client Meeting',
-    new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(),
-    new Date(new Date().setDate(new Date().getDate() + 2)).setHours(14, 0, 0, 0).toString(),
-    false,
-    'none',
-    'Quarterly review with client'
-  ),
-  createSampleEvent(
-    'evt_4',
-    'Conference',
-    new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
-    new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
-    true,
-    'none',
-    'Annual tech conference'
-  ),
-  createSampleEvent(
-    'evt_5',
-    'Weekly Planning',
-    new Date(new Date().setHours(10, 0, 0, 0)).toISOString(),
-    new Date(new Date().setHours(11, 0, 0, 0)).toISOString(),
-    false,
-    'weekly',
-    'Plan goals for the upcoming week'
-  ),
-  createSampleEvent(
-    'evt_6',
-    'Birthday Celebration',
-    new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
-    undefined,
-    true,
-    'yearly',
-    'Team birthday celebration'
-  ),
-  createSampleEvent(
-    'evt_7',
-    'Monthly Report',
-    new Date(new Date().setDate(1)).toISOString(),
-    undefined,
-    true,
-    'monthly',
-    'Submit monthly progress report'
-  ),
-  createSampleEvent(
-    'evt_8',
-    'Team Lunch',
-    new Date(new Date().setDate(new Date().getDate() + 3)).toISOString(),
-    new Date(new Date().setDate(new Date().getDate() + 3)).setHours(13, 0, 0, 0).toString(),
-    false,
-    'none',
-    'Monthly team building lunch'
-  ),
-];
-
+// Initialize with empty events - no mock data
 const initialState: EventsState = {
-  items: sampleEvents,
+  items: [],
   selectedDate: getTodayDate(),
   currentMonth: getCurrentMonth(),
   weekStart: 'sunday',
@@ -310,13 +203,13 @@ export const selectEventById =
 // ============================================================================
 
 import {
-    getEventsByPeriod,
-    getEventsForDate,
-    getMonthEvents,
-    getTodayEvents,
-    getWeekEvents,
-    isMultiDayEvent,
-    sortEventsForDisplay
+  getEventsByPeriod,
+  getEventsForDate,
+  getMonthEvents,
+  getTodayEvents,
+  getWeekEvents,
+  isMultiDayEvent,
+  sortEventsForDisplay
 } from '@/src/utils/eventHelpers';
 
 // Events for selected date

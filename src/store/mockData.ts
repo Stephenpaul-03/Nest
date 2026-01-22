@@ -1,11 +1,14 @@
 /**
  * Workspace-Aware Mock Data
  * 
- * This file contains all mock data structured by workspace.
- * Each workspace has its own independent dataset for:
- * - Finance (transactions)
- * - Medicals (inventory + schedule)
- * - Events
+ * This file contains mock data for development purposes.
+ * 
+ * ⚠️ WARNING: This file should NOT be imported in production builds.
+ * Mock data is for development/testing only.
+ * 
+ * To disable mock data:
+ * - Remove imports of this file
+ * - Ensure Redux slices initialize with empty arrays
  */
 
 import { Event } from '@/src/types/event';
@@ -570,7 +573,7 @@ export const familySchedule: ScheduleItem[] = [
     personId: 'child1',
     personName: 'Child 1',
     dosageAmount: '2',
-    dosageUnit: 'inhalation' as const,
+    dosageUnit: 'injection' as const,
     times: ['07:00'],
     frequency: 'daily' as const,
     startDate: getDateOffset(60),

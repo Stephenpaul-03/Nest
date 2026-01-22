@@ -11,11 +11,11 @@
  * - Time range selection (current month, year, custom)
  */
 
-import { ReportsDrillDownModal } from '@/components/reports/ReportsDrillDownModal';
 import { CategoryAnalysisCard } from '@/components/reports/CategoryAnalysisCard';
-import { ReportsMetricsCard, NetBalanceCard } from '@/components/reports/ReportsMetricsCard';
-import { TopThreeCard } from '@/components/reports/TopThreeCard';
 import { QuickToolsSection, TimeRangePicker } from '@/components/reports/QuickToolsSection';
+import { ReportsDrillDownModal } from '@/components/reports/ReportsDrillDownModal';
+import { NetBalanceCard, ReportsMetricsCard } from '@/components/reports/ReportsMetricsCard';
+import { TopThreeCard } from '@/components/reports/TopThreeCard';
 import { useSidebarState } from '@/components/sidebar/hooks/useSidebarState';
 import { useThemedColors } from '@/constants/colors';
 import {
@@ -27,12 +27,11 @@ import {
   calculateReportMetrics,
   DateRange,
   DrillDownData,
-  getMonthOptions,
   getMonthRange,
   getPreviousPeriodRange,
   getTopCategories,
   getTopDays,
-  groupExpensesByCategory,
+  groupExpensesByCategory
 } from '@/src/utils/reportHelpers';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
@@ -44,6 +43,7 @@ import {
   Text,
   VStack,
 } from '@gluestack-ui/themed';
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 
@@ -289,29 +289,48 @@ export default function Report() {
   );
   
   // Render empty state
-  const renderEmptyState = () => (
-    <Box
-      bg={colors.background.card}
-      borderRadius="$lg"
-      borderWidth={1}
-      borderColor={colors.border.primary}
-      p="$8"
-      alignItems="center"
-      justifyContent="center"
-    >
-      <MaterialCommunityIcons
-        name="chart-bar"
-        size={48}
-        color={colors.text.muted}
-      />
-      <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} mt="$4">
-        No data available
-      </Text>
-      <Text size="sm" color={colors.text.muted} mt="$1" textAlign="center">
-        Add transactions in the Transactions page to see your financial reports.
-      </Text>
-    </Box>
-  );
+  const renderEmptyState = () => {
+    const router = useRouter();
+    const colors = useThemedColors();
+
+    return (
+      <Box
+        bg={colors.background.card}
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor={colors.border.primary}
+        p="$8"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <MaterialCommunityIcons
+          name="chart-bar"
+          size={64}
+          color={colors.text.muted}
+        />
+        <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} mt="$4" textAlign="center">
+          No data for this period
+        </Text>
+        <Text size="sm" color={colors.text.muted} mt="$1" textAlign="center" mb="$4">
+          Add transactions or change the date range to see your financial reports
+        </Text>
+        <Pressable
+          onPress={() => router.push('/(app)/finance/transactions' as any)}
+        >
+          <Box
+            bg={colors.isDark ? '$primary600' : '$primary500'}
+            borderRadius="$md"
+            px="$4"
+            py="$2"
+          >
+            <Text color="white" fontWeight="$semibold" size="sm">
+              Add Transactions
+            </Text>
+          </Box>
+        </Pressable>
+      </Box>
+    );
+  };
   
   // Check if there's any data
   const hasData = filteredIncomeTransactions.length > 0 || filteredExpenseTransactions.length > 0;

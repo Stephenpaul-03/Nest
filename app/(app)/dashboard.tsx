@@ -589,22 +589,154 @@ function MedicalAlertsSection({ isMobile }: { isMobile: boolean }) {
   );
 }
 
-function EmptyState() {
+function FinanceEmptyState({ isMobile }: { isMobile: boolean }) {
+  const router = useRouter();
+  const colors = useThemedColors();
+
+  return (
+    <Box
+      bg={colors.background.card}
+      borderRadius="$lg"
+      borderWidth={1}
+      borderColor={colors.border.primary}
+      p={isMobile ? "$4" : "$4"}
+    >
+      <VStack gap="$3" alignItems="center">
+        <MaterialCommunityIcons
+          name="trending-up"
+          size={isMobile ? 32 : 40}
+          color={colors.text.muted}
+        />
+        <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} textAlign="center">
+          No transactions yet
+        </Text>
+        <Text size="sm" color={colors.text.muted} textAlign="center">
+          Track your income and expenses by adding your first transaction
+        </Text>
+        <Pressable
+          onPress={() => router.push('/(app)/finance/transactions' as any)}
+          mt="$2"
+        >
+          <Box
+            bg={colors.isDark ? '$primary600' : '$primary500'}
+            borderRadius="$md"
+            px="$4"
+            py="$2"
+          >
+            <Text color="white" fontWeight="$semibold" size="sm">
+              Add your first transaction
+            </Text>
+          </Box>
+        </Pressable>
+      </VStack>
+    </Box>
+  );
+}
+
+function EventsEmptyState({ isMobile }: { isMobile: boolean }) {
+  const router = useRouter();
+  const colors = useThemedColors();
+
+  return (
+    <Box
+      bg={colors.background.card}
+      borderRadius="$lg"
+      borderWidth={1}
+      borderColor={colors.border.primary}
+      p={isMobile ? "$4" : "$4"}
+    >
+      <VStack gap="$3" alignItems="center">
+        <MaterialCommunityIcons
+          name="calendar-blank"
+          size={isMobile ? 32 : 40}
+          color={colors.text.muted}
+        />
+        <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} textAlign="center">
+          No upcoming events
+        </Text>
+        <Text size="sm" color={colors.text.muted} textAlign="center">
+          Schedule events and appointments to see them here
+        </Text>
+        <Pressable
+          onPress={() => router.push('/(app)/events' as any)}
+          mt="$2"
+        >
+          <Box
+            bg={colors.isDark ? '$primary600' : '$primary500'}
+            borderRadius="$md"
+            px="$4"
+            py="$2"
+          >
+            <Text color="white" fontWeight="$semibold" size="sm">
+              Add an event
+            </Text>
+          </Box>
+        </Pressable>
+      </VStack>
+    </Box>
+  );
+}
+
+function MedicalAlertsEmptyState({ isMobile }: { isMobile: boolean }) {
+  const router = useRouter();
+  const colors = useThemedColors();
+
+  return (
+    <Box
+      bg={colors.background.card}
+      borderRadius="$lg"
+      borderWidth={1}
+      borderColor={colors.border.primary}
+      p={isMobile ? "$4" : "$4"}
+    >
+      <VStack gap="$3" alignItems="center">
+        <MaterialCommunityIcons
+          name="medical-bag"
+          size={isMobile ? 32 : 40}
+          color={colors.text.muted}
+        />
+        <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} textAlign="center">
+          No medical items added
+        </Text>
+        <Text size="sm" color={colors.text.muted} textAlign="center">
+          Add medicine or supplies to track inventory and schedules
+        </Text>
+        <Pressable
+          onPress={() => router.push('/(app)/medicals/inventory' as any)}
+          mt="$2"
+        >
+          <Box
+            bg={colors.isDark ? '$primary600' : '$primary500'}
+            borderRadius="$md"
+            px="$4"
+            py="$2"
+          >
+            <Text color="white" fontWeight="$semibold" size="sm">
+              Add medicine or supply
+            </Text>
+          </Box>
+        </Pressable>
+      </VStack>
+    </Box>
+  );
+}
+
+function WorkspaceEmptyState() {
   const colors = useThemedColors();
 
   return (
     <Box flex={1} justifyContent="center" alignItems="center" py="$20">
-      <VStack gap="$4" alignItems="center">
+      <VStack gap="$4" alignItems="center" maxWidth={400}>
         <MaterialCommunityIcons
           name="home-variant-outline"
-          size={48}
+          size={64}
           color={colors.text.muted}
         />
-        <Text size="lg" color={colors.text.muted} textAlign="center">
-          No tools enabled
+        <Text size="xl" fontWeight="$bold" color={colors.text.primary} textAlign="center">
+          This workspace is empty
         </Text>
-        <Text size="sm" color={colors.text.muted} textAlign="center">
-          Enable tools in workspace settings to see them here.
+        <Text size="md" color={colors.text.secondary} textAlign="center">
+          Start by adding data using the tools below. Enable Finance to track transactions, Events for calendar management, or Medicals for health tracking.
         </Text>
       </VStack>
     </Box>
@@ -641,6 +773,16 @@ export default function Dashboard() {
   // Check if any tools are enabled
   const hasEnabledTools = showFinance || showEvents || showMedicals;
 
+  // Get data for empty state checks
+  const { income, expense } = useFinanceSummary();
+  const { nextEvent, eventsIn7Days, eventsIn30Days } = useEventsSummary();
+  const alerts = useMedicalAlerts();
+  const transactions = useSelector(
+    (state: RootState) => state.transactions.transactions
+  );
+  const events = useSelector((state: RootState) => state.events.items);
+  const items = useSelector((state: RootState) => state.inventory.items);
+
   // Responsive spacing
   const containerPadding = isMobile ? '$4' : '$4';
   const containerGap = isMobile ? '$6' : '$8';
@@ -666,27 +808,39 @@ export default function Dashboard() {
 
       {/* Content */}
       {!hasEnabledTools ? (
-        <EmptyState />
+        <WorkspaceEmptyState />
       ) : (
         <VStack gap={containerGap}>
           {/* Finance Section */}
           {showFinance && (
             <Box>
-              <FinanceSummarySection isMobile={isMobile} />
+              {transactions.length === 0 ? (
+                <FinanceEmptyState isMobile={isMobile} />
+              ) : (
+                <FinanceSummarySection isMobile={isMobile} />
+              )}
             </Box>
           )}
 
           {/* Events Section */}
           {showEvents && (
             <Box>
-              <EventsSummarySection isMobile={isMobile} />
+              {events.length === 0 ? (
+                <EventsEmptyState isMobile={isMobile} />
+              ) : (
+                <EventsSummarySection isMobile={isMobile} />
+              )}
             </Box>
           )}
 
           {/* Medicals Section */}
           {showMedicals && (
             <Box>
-              <MedicalAlertsSection isMobile={isMobile} />
+              {items.length === 0 ? (
+                <MedicalAlertsEmptyState isMobile={isMobile} />
+              ) : (
+                <MedicalAlertsSection isMobile={isMobile} />
+              )}
             </Box>
           )}
         </VStack>

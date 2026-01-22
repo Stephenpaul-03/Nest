@@ -4,11 +4,11 @@
  */
 
 import {
-    ScheduleFilters,
-    ScheduleFormData,
-    ScheduleItem,
-    ScheduleState,
-    ScheduleVisibilityOptions
+  ScheduleFilters,
+  ScheduleFormData,
+  ScheduleItem,
+  ScheduleState,
+  ScheduleVisibilityOptions
 } from '@/src/types/schedule';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
@@ -33,124 +33,7 @@ const createScheduleItem = (data: ScheduleFormData): ScheduleItem => {
   };
 };
 
-// Sample schedule data for demo
-const sampleItems: ScheduleItem[] = [
-  {
-    id: '1',
-    medicineName: 'Metformin 500mg',
-    personId: 'user1',
-    personName: 'John Doe',
-    dosageAmount: '1',
-    dosageUnit: 'tablet',
-    times: ['08:00', '20:00'],
-    frequency: 'daily',
-    startDate: getTodayDate(),
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    medicineName: 'Amlodipine 5mg',
-    personId: 'user1',
-    personName: 'John Doe',
-    dosageAmount: '1',
-    dosageUnit: 'tablet',
-    times: ['09:00'],
-    frequency: 'daily',
-    startDate: getTodayDate(),
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    medicineName: 'Vitamin D3 1000IU',
-    personId: 'user2',
-    personName: 'Jane Smith',
-    dosageAmount: '1',
-    dosageUnit: 'tablet',
-    times: ['08:00'],
-    frequency: 'daily',
-    startDate: getTodayDate(),
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    medicineName: 'Cetirizine 10mg',
-    personId: 'user3',
-    personName: 'Mike Johnson',
-    dosageAmount: '1',
-    dosageUnit: 'tablet',
-    times: ['09:00', '21:00'],
-    frequency: 'daily',
-    startDate: getTodayDate(),
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    medicineName: 'Omeprazole 20mg',
-    personId: 'user1',
-    personName: 'John Doe',
-    dosageAmount: '1',
-    dosageUnit: 'tablet',
-    times: ['07:30'],
-    frequency: 'daily',
-    startDate: getTodayDate(),
-    isActive: false, // Paused example
-    notes: 'Take before breakfast',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '6',
-    medicineName: 'Calcium + Vitamin D',
-    personId: 'user2',
-    personName: 'Jane Smith',
-    dosageAmount: '2',
-    dosageUnit: 'tablet',
-    times: ['08:00', '20:00'],
-    frequency: 'daily',
-    startDate: getTodayDate(),
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '7',
-    medicineName: 'Ibuprofen 400mg',
-    personId: 'user3',
-    personName: 'Mike Johnson',
-    dosageAmount: '1',
-    dosageUnit: 'tablet',
-    times: ['12:00'],
-    frequency: 'daily',
-    startDate: getTodayDate(),
-    isActive: true,
-    notes: 'As needed for pain',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '8',
-    medicineName: 'Lisinopril 10mg',
-    personId: 'user4',
-    personName: 'Sarah Williams',
-    dosageAmount: '1',
-    dosageUnit: 'tablet',
-    times: ['10:00'],
-    frequency: 'daily',
-    startDate: getTodayDate(),
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
+// Initialize with empty items - no mock data
 const initialFilters: ScheduleFilters = {
   personId: 'all',
   status: 'all',
@@ -162,7 +45,7 @@ const initialVisibilityOptions: ScheduleVisibilityOptions = {
 };
 
 const initialState: ScheduleState = {
-  items: sampleItems,
+  items: [],
   filters: initialFilters,
   visibilityOptions: initialVisibilityOptions,
   modalMode: 'add',

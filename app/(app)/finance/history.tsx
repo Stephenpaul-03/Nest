@@ -525,31 +525,48 @@ export default function History() {
   );
   
   // Render empty state
-  const renderEmptyState = () => (
-    <Box
-      bg={colors.background.card}
-      borderRadius="$lg"
-      borderWidth={1}
-      borderColor={colors.border.primary}
-      p="$8"
-      alignItems="center"
-      justifyContent="center"
-    >
-      <MaterialCommunityIcons
-        name="history"
-        size={48}
-        color={colors.text.muted}
-      />
-      <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} mt="$4">
-        No transactions found
-      </Text>
-      <Text size="sm" color={colors.text.muted} mt="$1" textAlign="center">
-        {hasActiveFilters
-          ? 'Try adjusting your filters or add transactions in the Transactions page.'
-          : 'Add transactions in the Transactions page to see your history.'}
-      </Text>
-    </Box>
-  );
+  const renderEmptyState = () => {
+    const router = useRouter();
+    const colors = useThemedColors();
+
+    return (
+      <Box
+        bg={colors.background.card}
+        borderRadius="$lg"
+        borderWidth={1}
+        borderColor={colors.border.primary}
+        p="$8"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <MaterialCommunityIcons
+          name="history"
+          size={64}
+          color={colors.text.muted}
+        />
+        <Text size="lg" fontWeight="$semibold" color={colors.text.secondary} mt="$4" textAlign="center">
+          No history to show yet
+        </Text>
+        <Text size="sm" color={colors.text.muted} mt="$1" textAlign="center" mb="$4">
+          History appears once transactions are added
+        </Text>
+        <Pressable
+          onPress={() => router.push('/(app)/finance/transactions' as any)}
+        >
+          <Box
+            bg={colors.isDark ? '$primary600' : '$primary500'}
+            borderRadius="$md"
+            px="$4"
+            py="$2"
+          >
+            <Text color="white" fontWeight="$semibold" size="sm">
+              Add Transactions
+            </Text>
+          </Box>
+        </Pressable>
+      </Box>
+    );
+  };
   
   return (
     <Box flex={1} bg={colors.background.primary} p={isMobile ? '$4' : '$6'}>

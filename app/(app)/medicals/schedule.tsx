@@ -14,9 +14,9 @@ import {
   selectIsEditMode,
   selectIsScheduleModalOpen,
   selectScheduleFilters,
+  selectScheduleItems,
   selectScheduleVisibilityOptions,
   selectUniquePeople,
-  selectScheduleItems,
   toggleActive,
   toggleEditMode
 } from '@/src/store/scheduleSlice';
@@ -214,56 +214,114 @@ export default function Schedule() {
           Overview
         </Text>
       </HStack>
-      <VStack gap="$2">
-        <HStack justifyContent="space-between">
-          <Text size="sm" color={colors.text.secondary}>
-            Active Schedules
-          </Text>
-          <Text
-            size="sm"
-            fontWeight="$semibold"
-            color={colors.toggle.on}
-          >
-            {personSummary.activeSchedules}
-          </Text>
+      {items.length === 0 ? (
+        <Text size="sm" color={colors.text.muted} textAlign="center" py="$4">
+          Add schedules to see overview
+        </Text>
+      ) : (
+        <VStack gap="$2">
+          <HStack justifyContent="space-between">
+            <Text size="sm" color={colors.text.secondary}>
+              Active Schedules
+            </Text>
+            <Text
+              size="sm"
+              fontWeight="$semibold"
+              color={colors.toggle.on}
+            >
+              {personSummary.activeSchedules}
+            </Text>
+          </HStack>
+          <HStack justifyContent="space-between">
+            <Text size="sm" color={colors.text.secondary}>
+              Paused
+            </Text>
+            <Text
+              size="sm"
+              fontWeight="$semibold"
+              color={colors.text.secondary}
+            >
+              {personSummary.pausedSchedules}
+            </Text>
+          </HStack>
+          <HStack justifyContent="space-between">
+            <Text size="sm" color={colors.text.secondary}>
+              Total Daily Doses
+            </Text>
+            <Text
+              size="sm"
+              fontWeight="$bold"
+              color={colors.text.primary}
+            >
+              {personSummary.totalDailyDoses}
+            </Text>
+          </HStack>
+          <HStack justifyContent="space-between">
+            <Text size="sm" color={colors.text.secondary}>
+              Unique Medicines
+            </Text>
+            <Text
+              size="sm"
+              fontWeight="$semibold"
+              color={colors.text.primary}
+            >
+              {personSummary.uniqueMedicines}
+            </Text>
+          </HStack>
+        </VStack>
+      )}
+    </Box>
+  );
+
+  // Render empty state
+  const renderEmptyState = () => (
+    <Box
+      bg={colors.background.card}
+      borderRadius="$lg"
+      p="$12"
+      alignItems="center"
+      justifyContent="center"
+      borderWidth={1}
+      borderColor={colors.border.primary}
+    >
+      <MaterialCommunityIcons
+        name="pill"
+        size={64}
+        color={colors.text.muted}
+      />
+      <Text
+        size="xl"
+        fontWeight="$semibold"
+        color={colors.text.secondary}
+        mt="$4"
+        textAlign="center"
+      >
+        No schedules yet
+      </Text>
+      <Text
+        size="sm"
+        color={colors.text.muted}
+        mt="$1"
+        textAlign="center"
+        mb="$4"
+      >
+        Add a medicine schedule to start tracking medication times
+      </Text>
+      <Button
+        onPress={handleAddItem}
+        bg={colors.isDark ? '$primary500' : '$primary600'}
+      >
+        <HStack gap="$2" alignItems="center">
+          <MaterialCommunityIcons
+            name="plus"
+            size={18}
+            color="white"
+          />
+          <ButtonText color="white" fontWeight="$semibold">
+            Add Schedule
+          </ButtonText>
         </HStack>
-        <HStack justifyContent="space-between">
-          <Text size="sm" color={colors.text.secondary}>
-            Paused
-          </Text>
-          <Text
-            size="sm"
-            fontWeight="$semibold"
-            color={colors.text.secondary}
-          >
-            {personSummary.pausedSchedules}
-          </Text>
-        </HStack>
-        <HStack justifyContent="space-between">
-          <Text size="sm" color={colors.text.secondary}>
-            Total Daily Doses
-          </Text>
-          <Text
-            size="sm"
-            fontWeight="$bold"
-            color={colors.text.primary}
-          >
-            {personSummary.totalDailyDoses}
-          </Text>
-        </HStack>
-        <HStack justifyContent="space-between">
-          <Text size="sm" color={colors.text.secondary}>
-            Unique Medicines
-          </Text>
-          <Text
-            size="sm"
-            fontWeight="$semibold"
-            color={colors.text.primary}
-          >
-            {personSummary.uniqueMedicines}
-          </Text>
-        </HStack>
-      </VStack>
+      </Button>
     </Box>
   );
 
@@ -453,57 +511,33 @@ export default function Schedule() {
 
       <ScrollView flex={1} p="$4" showsVerticalScrollIndicator={true}>
         {/* Person Selector */}
-        {renderPersonTabs()}
+        {items.length > 0 && renderPersonTabs()}
 
         {/* Overview */}
         {renderOverview()}
 
         {/* Timetable */}
-        <Text
-          size="lg"
-          fontWeight="$bold"
-          color={colors.text.primary}
-          mb="$3"
-          mt="$2"
-        >
-          Today's Schedule
-        </Text>
-
-        {personItems.length === 0 ? (
-          <Box
-            bg={colors.background.card}
-            borderRadius="$lg"
-            p="$8"
-            alignItems="center"
-            justifyContent="center"
-            mt="$4"
-          >
-            <MaterialCommunityIcons
-              name="pill"
-              size={48}
-              color={colors.text.muted}
-            />
+        {items.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <>
             <Text
               size="lg"
-              color={colors.text.secondary}
+              fontWeight="$bold"
+              color={colors.text.primary}
+              mb="$3"
               mt="$2"
             >
-              No schedules found
+              Today's Schedule
             </Text>
-            <Text size="sm" color={colors.text.muted}>
-              {selectedPersonId === 'all'
-                ? 'Add a medicine schedule to get started'
-                : `No schedules for this person`}
-            </Text>
-          </Box>
-        ) : (
-          <VStack gap="$4">
-            {TIME_PERIODS.map((period) => (
-              <Box key={period}>
-                {renderTimePeriod(period)}
-              </Box>
-            ))}
-          </VStack>
+            <VStack gap="$4">
+              {TIME_PERIODS.map((period) => (
+                <Box key={period}>
+                  {renderTimePeriod(period)}
+                </Box>
+              ))}
+            </VStack>
+          </>
         )}
       </ScrollView>
 
@@ -598,99 +632,57 @@ export default function Schedule() {
 
       <HStack gap="$4" flex={1} alignItems="flex-start">
         {/* Left Sidebar - Person Selector & Filters */}
-        <VStack
-          gap="$4"
-          minWidth={220}
-          maxWidth={280}
-          mr="$2"
-        >
-          {/* Person Selector */}
-          <Box
-            bg={colors.background.card}
-            borderRadius="$lg"
-            borderWidth={1}
-            borderColor={colors.border.primary}
-            p="$4"
+        {items.length > 0 && (
+          <VStack
+            gap="$4"
+            minWidth={220}
+            maxWidth={280}
+            mr="$2"
           >
-            <Text
-              size="md"
-              fontWeight="$semibold"
-              color={colors.text.primary}
-              mb="$3"
+            {/* Person Selector */}
+            <Box
+              bg={colors.background.card}
+              borderRadius="$lg"
+              borderWidth={1}
+              borderColor={colors.border.primary}
+              p="$4"
             >
-              Select Person
-            </Text>
-            <VStack gap="$2">
-              <Pressable
-                onPress={() => setSelectedPersonId('all')}
-                hitSlop={8}
+              <Text
+                size="md"
+                fontWeight="$semibold"
+                color={colors.text.primary}
+                mb="$3"
               >
-                <Box
-                  bg={
-                    selectedPersonId === 'all'
-                      ? colors.isDark
-                        ? '$primary600'
-                        : '$primary100'
-                      : colors.background.input
-                  }
-                  borderRadius="$md"
-                  p="$2"
-                  borderWidth={1}
-                  borderColor={
-                    selectedPersonId === 'all'
-                      ? colors.toggle.on
-                      : colors.border.primary
-                  }
-                >
-                  <HStack alignItems="center" gap="$2">
-                    <MaterialCommunityIcons
-                      name="account-group"
-                      size={18}
-                      color={
-                        selectedPersonId === 'all'
-                          ? colors.toggle.on
-                          : colors.text.secondary
-                      }
-                    />
-                    <Text
-                      size="sm"
-                      fontWeight="$medium"
-                      color={colors.text.primary}
-                    >
-                      All People
-                    </Text>
-                  </HStack>
-                </Box>
-              </Pressable>
-              {allPeople.map((person) => (
+                Select Person
+              </Text>
+              <VStack gap="$2">
                 <Pressable
-                  key={person.id}
-                  onPress={() => setSelectedPersonId(person.id)}
+                  onPress={() => setSelectedPersonId('all')}
                   hitSlop={8}
                 >
                   <Box
                     bg={
-                      selectedPersonId === person.id
+                      selectedPersonId === 'all'
                         ? colors.isDark
                           ? '$primary600'
                           : '$primary100'
-                        : colors.background.input
+                      : colors.background.input
                     }
                     borderRadius="$md"
                     p="$2"
                     borderWidth={1}
                     borderColor={
-                      selectedPersonId === person.id
+                      selectedPersonId === 'all'
                         ? colors.toggle.on
                         : colors.border.primary
                     }
                   >
                     <HStack alignItems="center" gap="$2">
                       <MaterialCommunityIcons
-                        name="account"
+                        name="account-group"
                         size={18}
                         color={
-                          selectedPersonId === person.id
+                          selectedPersonId === 'all'
                             ? colors.toggle.on
                             : colors.text.secondary
                         }
@@ -700,72 +692,70 @@ export default function Schedule() {
                         fontWeight="$medium"
                         color={colors.text.primary}
                       >
-                        {person.name}
+                        All People
                       </Text>
                     </HStack>
                   </Box>
                 </Pressable>
-              ))}
-            </VStack>
-          </Box>
+                {allPeople.map((person) => (
+                  <Pressable
+                    key={person.id}
+                    onPress={() => setSelectedPersonId(person.id)}
+                    hitSlop={8}
+                  >
+                    <Box
+                      bg={
+                        selectedPersonId === person.id
+                          ? colors.isDark
+                            ? '$primary600'
+                            : '$primary100'
+                          : colors.background.input
+                      }
+                      borderRadius="$md"
+                      p="$2"
+                      borderWidth={1}
+                      borderColor={
+                        selectedPersonId === person.id
+                          ? colors.toggle.on
+                          : colors.border.primary
+                      }
+                    >
+                      <HStack alignItems="center" gap="$2">
+                        <MaterialCommunityIcons
+                          name="account"
+                          size={18}
+                          color={
+                            selectedPersonId === person.id
+                              ? colors.toggle.on
+                              : colors.text.secondary
+                          }
+                        />
+                        <Text
+                          size="sm"
+                          fontWeight="$medium"
+                          color={colors.text.primary}
+                        >
+                          {person.name}
+                        </Text>
+                      </HStack>
+                    </Box>
+                  </Pressable>
+                ))}
+              </VStack>
+            </Box>
 
-          {/* Overview */}
-          {renderOverview()}
-        </VStack>
+            {/* Overview */}
+            {renderOverview()}
+          </VStack>
+        )}
 
         {/* Main Content - Timetable */}
         <ScrollView
           flex={1}
           showsVerticalScrollIndicator={true}
         >
-          {personItems.length === 0 ? (
-            <Box
-              bg={colors.background.card}
-              borderRadius="$lg"
-              p="$12"
-              alignItems="center"
-              justifyContent="center"
-              borderWidth={1}
-              borderColor={colors.border.primary}
-            >
-              <MaterialCommunityIcons
-                name="pill"
-                size={64}
-                color={colors.text.muted}
-              />
-              <Text
-                size="xl"
-                color={colors.text.secondary}
-                mt="$4"
-              >
-                No schedules found
-              </Text>
-              <Text
-                size="sm"
-                color={colors.text.muted}
-                mt="$1"
-              >
-                {selectedPersonId === 'all'
-                  ? 'Add a medicine schedule to get started'
-                  : `No schedules for ${allPeople.find(p => p.id === selectedPersonId)?.name || 'this person'}`}
-              </Text>
-              <Button
-                mt="$4"
-                onPress={handleAddItem}
-                bg={colors.isDark ? '$primary500' : '$primary600'}
-              >
-                <HStack gap="$2" alignItems="center">
-                  <MaterialCommunityIcons
-                    name="plus"
-                    size={18}
-                    color="white"
-                  />
-                  <ButtonText color="white">
-                    Add Schedule
-                  </ButtonText>
-                </HStack>
-              </Button>
-            </Box>
+          {items.length === 0 ? (
+            renderEmptyState()
           ) : (
             <HStack
               gap="$2"
